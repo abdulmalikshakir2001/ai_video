@@ -1,6 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
 import { createVideoClip, getVideoClipsByVId, updateVideoClip } from 'models/videoClips';
+import { getSession } from '@/lib/session';
+import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
 
 
 
@@ -63,33 +67,64 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 }
 
+const downloadVideo = async (url, outputPath) => {
+  const writer = fs.createWriteStream(outputPath);
 
+  const response = await axios({
+    url,
+    method: 'GET',
+    responseType: 'stream'
+  });
+
+  response.data.pipe(writer);
+
+  return new Promise((resolve, reject) => {
+    writer.on('finish', resolve);
+    writer.on('error', reject);
+  });
+};
 
 const handlePUT = async (req: NextApiRequest, res: NextApiResponse) => {
   const { exportArray }: any = req.body;
+  const session = await getSession(req, res);
 
   try {
     const exportParse = JSON.parse(exportArray);
-    console.log(exportParse)
+    console.log(exportParse);
     let countForRes = 0;
 
     for (const clip of exportParse) {
-      const updateVideo =  await updateVideoClip({ title: clip.name, src_url: clip.src_url, clip_id: clip.id });
-      if(updateVideo){
-        countForRes++
+      // Create user directory if it doesn't exist
+      const userDirectory = path.join(process.cwd(), 'public', 'videos', `user_${session?.user.id}`, 'file');
+      if (!fs.existsSync(userDirectory)) {
+        fs.mkdirSync(userDirectory, { recursive: true });
+      }
 
+      // Create a unique file name for each video
+      const fileName = `video_${Date.now()}.mp4`;
+      const outputPath = path.join(userDirectory, fileName);
+
+      // Download the video
+      await downloadVideo(clip.src_url, outputPath);
+
+      // Update the video clip with the new path
+      const updateVideo = await updateVideoClip({
+        title: clip.name,
+        src_url: `/videos/user_${session?.user.id}/file/${fileName}`,
+        clip_id: clip.id
+      });
+
+      if (updateVideo) {
+        countForRes++;
       }
     }
-    if(countForRes ===exportParse.length){
-      countForRes=0
-      res.status(200).json({ status: 'true', message: 'Video clips updated', data: {} });
 
-    }else {
-      countForRes
+    if (countForRes === exportParse.length) {
+      countForRes = 0;
+      res.status(200).json({ status: 'true', message: 'Video clips updated', data: {} });
+    } else {
       res.status(500).json({ status: 'false', message: 'Not all video clips were updated', data: {} });
     }
-
-    
 
   } catch (error) {
     console.error('Error updating video clips:', error);
