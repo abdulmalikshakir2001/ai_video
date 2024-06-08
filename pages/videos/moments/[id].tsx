@@ -28,8 +28,6 @@ const FetchingVideo: NextPageWithLayout = () => {
               });
 
   },[id])
-
-
   return (
     <>
       <Head>

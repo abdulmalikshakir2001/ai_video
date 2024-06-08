@@ -39,6 +39,7 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getSession(req, res);
 
   if(src_url){
+    
     const getVideo = await updateConVideoSrcField({id:updateConVidSrcById,userId:session?.user.id,conVideoSrc:src_url,conVideoTitle:title});
     if (getVideo) {
       res.status(200).json({ status: 'true', message: 'src field and tiltle field updated', data: getVideo });
@@ -75,8 +76,6 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
 // Handle PUT request to update the conVideoId field
 const handlePUT = async (req: NextApiRequest, res: NextApiResponse) => {
   const {  conVideoId,videoId ,conVideoSrc} = req.body;
-  console.log(`=============================================src`)
-  console.log(conVideoSrc)
 
   const session = await getSession(req, res);
 // put request to update conVideoSrc

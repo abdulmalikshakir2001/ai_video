@@ -328,16 +328,7 @@ const FetchingVideo: NextPageWithLayout = ({
           </div>
         </div>
       </div>
-      {clips.length > 0 && (
-        <div className="mt-4">
-          <h2>{t('clips')}</h2>
-          <ul>
-            {clips.map((clip) => (
-              <li key={clip.id}>{clip.title}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      
     </>
   );
 };
