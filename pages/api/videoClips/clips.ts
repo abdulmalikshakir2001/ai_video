@@ -133,6 +133,15 @@ const handlePUT = async (req: NextApiRequest, res: NextApiResponse) => {
       });
 
       if (updateVideo) {
+        // Delete the original clip
+        fs.unlink(outputPath, (err) => {
+          if (err) {
+            console.error('Error deleting original clip:', err);
+          } else {
+            console.log(`Deleted original clip: ${outputPath}`);
+          }
+        });
+
         countForRes++;
       }
     }
