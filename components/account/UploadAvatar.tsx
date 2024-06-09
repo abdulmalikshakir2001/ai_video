@@ -8,6 +8,7 @@ import type { ApiResponse } from 'types';
 import type { User } from '@prisma/client';
 import { Card } from '@/components/shared';
 import { defaultHeaders } from '@/lib/common';
+import Image from 'next/image';
 
 const UploadAvatar = ({ user }: { user: Partial<User> }) => {
   const { t } = useTranslation('common');
@@ -136,7 +137,8 @@ const UploadAvatar = ({ user }: { user: Partial<User> }) => {
                 />
               </div>
               {image && (
-                <img
+                
+                <Image
                   src={image}
                   alt={user.name}
                   className="h-full w-full rounded-full object-cover"
