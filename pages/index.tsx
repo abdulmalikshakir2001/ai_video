@@ -157,7 +157,7 @@ const Home: NextPageWithLayout = () => {
                 <div className="mb-14 mt-20 flex items-center justify-center">
                   <div className="isolate mt-14 items-center space-y-2 md:flex md:-space-x-2 md:space-y-0">
                     <Image className="relative z-30 inline-block h-10 w-10 rounded-full ring-2 ring-white delay-1000 hover:scale-[1200%]" src="/azeeem.jpg" alt="" />
-                    <Image className="relative z-20 inline-block h-10 w-10 rounded-full ring-2 ring-white" src="/hasnain.jpg" alt="" />
+                    <Image className="relative z-20 inline-block h-10 w-10 rounded-full ring-2 ring-white" src="/hasnain.jpg" alt=""  />
                     <Image className="relative z-10 inline-block h-10 w-10 rounded-full ring-2 ring-white" src="/hassan.jpg" alt="" />
                     <Image className="relative z-0 inline-block h-10 w-10 rounded-full ring-2 ring-white" src="/jenny.jpg" alt="" />
                     <div className="text-sm text-neutral-500 md:pl-6">{t('creators-have-repurposed')}</div>
