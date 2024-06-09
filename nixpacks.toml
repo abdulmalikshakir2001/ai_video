@@ -7,11 +7,5 @@ commands = [
   "unzip ffmpeg-release-essentials.zip",
   "mv ffmpeg-*-static/ffmpeg /usr/local/bin/ffmpeg",
   "mv ffmpeg-*-static/ffprobe /usr/local/bin/ffprobe",
-  "rm -rf ffmpeg-release-essentials.zip ffmpeg-*-static",
-  "npm install"  # Install dependencies
-]
-
-[phases.start]
-commands = [
-  "npm start"
+  "rm -rf ffmpeg-release-essentials.zip ffmpeg-*-static"
 ]
