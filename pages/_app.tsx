@@ -11,7 +11,7 @@ import '@boxyhq/react-ui/dist/style.css';
 import '../styles/globals.css';
 import { useEffect } from 'react';
 import env from '@/lib/env';
-// import { Theme, applyTheme } from '@/lib/theme';
+import { Theme, applyTheme } from '@/lib/theme';
 import { Themer } from '@boxyhq/react-ui/shared';
 import { AccountLayout } from '@/components/layouts';
 
@@ -28,9 +28,9 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
       });
     }
 
-    // if (env.darkModeEnabled) {
-    //   applyTheme(localStorage.getItem('theme') as Theme);
-    // }
+    if (env.darkModeEnabled) {
+      applyTheme(localStorage.getItem('theme') as Theme);
+    }
   }, []);
 
   const getLayout =
