@@ -41,7 +41,8 @@ yarn-error.log*
 # Sentry
 .sentryclirc
 
-.env
+# Ignore only the .env file in the root directory
+/.env
 
 # Tests
 /report
@@ -52,7 +53,11 @@ yarn-error.log*
 # eslint
 .eslintcache
 
+# Visual Studio Code
 .vscode
+
 # Sentry Config File
 .sentryclirc
+
+# Ignore the public videos directory
 public/videos
