@@ -1,6 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
 import { createVideoClip, getVideoClipsByVId, updateVideoClip } from 'models/videoClips';
+import { getSession } from '@/lib/session';
+import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
+import ffmpeg from 'fluent-ffmpeg';
 
 
 
@@ -63,33 +68,90 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 }
 
+const downloadVideo = async (url, outputPath) => {
+  const writer = fs.createWriteStream(outputPath);
 
+  const response = await axios({
+    url,
+    method: 'GET',
+    responseType: 'stream'
+  });
+
+  response.data.pipe(writer);
+
+  return new Promise((resolve, reject) => {
+    writer.on('finish', resolve);
+    writer.on('error', reject);
+  });
+};
+
+
+const addBackgroundMusic = async (videoPath: string, audioPath: string, outputPath: string) => {
+  return new Promise((resolve, reject) => {
+    ffmpeg()
+      .addInput(videoPath)
+      .addInput(audioPath)
+      .complexFilter([
+        '[0:a][1:a]amix=inputs=2:duration=first:dropout_transition=2[a]'
+      ])
+      .outputOptions(['-map 0:v', '-map [a]', '-c:v copy', '-shortest'])
+      .saveToFile(outputPath)
+      .on('end', resolve)
+      .on('error', reject);
+  });
+};
 
 const handlePUT = async (req: NextApiRequest, res: NextApiResponse) => {
   const { exportArray }: any = req.body;
+  const session = await getSession(req, res);
+  const backgroundMusicPath = path.join(process.cwd(), 'public', 'background_music.mp3'); // Path to your background music file
 
   try {
     const exportParse = JSON.parse(exportArray);
-    console.log(exportParse)
+    console.log(exportParse);
     let countForRes = 0;
 
     for (const clip of exportParse) {
-      const updateVideo =  await updateVideoClip({ title: clip.name, src_url: clip.src_url, clip_id: clip.id });
-      if(updateVideo){
-        countForRes++
+      const userDirectory = path.join(process.cwd(), 'public', 'videos', `user_${session?.user.id}`, 'file');
+      if (!fs.existsSync(userDirectory)) {
+        fs.mkdirSync(userDirectory, { recursive: true });
+      }
 
+      const fileName = `video_${Date.now()}.mp4`;
+      const outputPath = path.join(userDirectory, fileName);
+      const finalOutputPath = path.join(userDirectory, `final_${fileName}`);
+
+      await downloadVideo(clip.src_url, outputPath);
+
+      // Add background music
+      await addBackgroundMusic(outputPath, backgroundMusicPath, finalOutputPath);
+
+      const updateVideo = await updateVideoClip({
+        title: clip.name,
+        src_url: `/videos/user_${session?.user.id}/file/final_${fileName}`,
+        clip_id: clip.id,
+      });
+
+      if (updateVideo) {
+        // Delete the original clip
+        fs.unlink(outputPath, (err) => {
+          if (err) {
+            console.error('Error deleting original clip:', err);
+          } else {
+            console.log(`Deleted original clip: ${outputPath}`);
+          }
+        });
+
+        countForRes++;
       }
     }
-    if(countForRes ===exportParse.length){
-      countForRes=0
-      res.status(200).json({ status: 'true', message: 'Video clips updated', data: {} });
 
-    }else {
-      countForRes
+    if (countForRes === exportParse.length) {
+      countForRes = 0;
+      res.status(200).json({ status: 'true', message: 'Video clips updated', data: {} });
+    } else {
       res.status(500).json({ status: 'false', message: 'Not all video clips were updated', data: {} });
     }
-
-    
 
   } catch (error) {
     console.error('Error updating video clips:', error);
