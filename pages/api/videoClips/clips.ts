@@ -5,6 +5,7 @@ import { getSession } from '@/lib/session';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import ffmpeg from 'fluent-ffmpeg';
 
 
 
@@ -84,9 +85,26 @@ const downloadVideo = async (url, outputPath) => {
   });
 };
 
+
+const addBackgroundMusic = async (videoPath: string, audioPath: string, outputPath: string) => {
+  return new Promise((resolve, reject) => {
+    ffmpeg()
+      .addInput(videoPath)
+      .addInput(audioPath)
+      .complexFilter([
+        '[0:a][1:a]amix=inputs=2:duration=first:dropout_transition=2[a]'
+      ])
+      .outputOptions(['-map 0:v', '-map [a]', '-c:v copy', '-shortest'])
+      .saveToFile(outputPath)
+      .on('end', resolve)
+      .on('error', reject);
+  });
+};
+
 const handlePUT = async (req: NextApiRequest, res: NextApiResponse) => {
   const { exportArray }: any = req.body;
   const session = await getSession(req, res);
+  const backgroundMusicPath = path.join(process.cwd(), 'public', 'background_music.mp3'); // Path to your background music file
 
   try {
     const exportParse = JSON.parse(exportArray);
@@ -94,24 +112,24 @@ const handlePUT = async (req: NextApiRequest, res: NextApiResponse) => {
     let countForRes = 0;
 
     for (const clip of exportParse) {
-      // Create user directory if it doesn't exist
       const userDirectory = path.join(process.cwd(), 'public', 'videos', `user_${session?.user.id}`, 'file');
       if (!fs.existsSync(userDirectory)) {
         fs.mkdirSync(userDirectory, { recursive: true });
       }
 
-      // Create a unique file name for each video
       const fileName = `video_${Date.now()}.mp4`;
       const outputPath = path.join(userDirectory, fileName);
+      const finalOutputPath = path.join(userDirectory, `final_${fileName}`);
 
-      // Download the video
       await downloadVideo(clip.src_url, outputPath);
 
-      // Update the video clip with the new path
+      // Add background music
+      await addBackgroundMusic(outputPath, backgroundMusicPath, finalOutputPath);
+
       const updateVideo = await updateVideoClip({
         title: clip.name,
-        src_url: `/videos/user_${session?.user.id}/file/${fileName}`,
-        clip_id: clip.id
+        src_url: `/videos/user_${session?.user.id}/file/final_${fileName}`,
+        clip_id: clip.id,
       });
 
       if (updateVideo) {
