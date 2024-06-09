@@ -75,7 +75,7 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
 
 // Handle PUT request to update the conVideoId field
 const handlePUT = async (req: NextApiRequest, res: NextApiResponse) => {
-  const {  conVideoId,videoId ,conVideoSrc} = req.body;
+  const {  conVideoId,videoId } = req.body;
 
   const session = await getSession(req, res);
 // put request to update conVideoSrc

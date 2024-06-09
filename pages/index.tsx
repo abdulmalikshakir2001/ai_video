@@ -5,14 +5,14 @@ import type { NextPageWithLayout } from 'types';
 import { GetServerSidePropsContext } from 'next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
-import useTheme from 'hooks/useTheme';
+
 import env from '@/lib/env';
 import Ed from '../public/Ed.png'
 import Image from 'next/image';
 
 const Home: NextPageWithLayout = () => {
   const { t } = useTranslation('common');
-  const { toggleTheme, selectedTheme } = useTheme();
+  
 
   return (
     <>
