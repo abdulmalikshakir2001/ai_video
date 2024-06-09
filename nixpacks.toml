@@ -3,6 +3,7 @@ aptPkgs = ["wget", "unzip", "libc6"]
 
 [phases.build]
 commands = [
+  "apt-get remove -y ffmpeg",  # Remove existing FFmpeg
   "wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-essentials.zip",
   "unzip ffmpeg-release-essentials.zip",
   "mv ffmpeg-*-static/ffmpeg /usr/local/bin/ffmpeg",
