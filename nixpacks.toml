@@ -1,5 +1,5 @@
 [phases.setup]
-aptPkgs = ["wget", "unzip"]
+aptPkgs = ["wget", "unzip", "libc6"]
 
 [phases.build]
 commands = [
