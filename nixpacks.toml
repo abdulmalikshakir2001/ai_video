@@ -1,11 +1,2 @@
 [phases.setup]
-aptPkgs = ["wget", "unzip"]
-
-[phases.build]
-commands = [
-  "wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-essentials.zip",
-  "unzip -o ffmpeg-release-essentials.zip",  # Use -o to overwrite existing files
-  "mv -f ffmpeg-*-static/ffmpeg /usr/local/bin/ffmpeg",  # Use -f to force overwrite
-  "mv -f ffmpeg-*-static/ffprobe /usr/local/bin/ffprobe",  # Use -f to force overwrite
-  "rm -rf ffmpeg-release-essentials.zip ffmpeg-*-static"
-]
+aptPkgs = ["ffmpeg"]
