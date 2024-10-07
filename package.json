@@ -8,7 +8,7 @@
   "scripts": {
     "release": "git checkout release && git merge origin/main && release-it && git checkout main && git merge origin/release && git push origin main",
     "db:setup": "prisma generate && prisma db push && npm run seed",
-    "dev": "node server.js",
+    "dev": "nodemon server.js",
     "build": "next build",
     "start": "node server.js",
     "check-types": "tsc --pretty --noEmit",
@@ -114,6 +114,7 @@
     "eslint-plugin-react": "7.34.1",
     "jest": "29.7.0",
     "jest-environment-jsdom": "29.7.0",
+    "nodemon": "^3.1.7",
     "postcss": "^8.4.38",
     "prettier": "3.2.5",
     "prettier-plugin-tailwindcss": "0.5.14",
