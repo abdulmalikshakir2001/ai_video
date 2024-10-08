@@ -1,15 +1,18 @@
-import requests
+import torch
 
-API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev"
-headers = {"Authorization": "Bearer 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"}
+from diffusers import StableVideoDiffusionPipeline
+from diffusers.utils import load_image, export_to_video
 
-def query(payload):
-	response = requests.post(API_URL, headers=headers, json=payload)
-	return response.content
-image_bytes = query({
-	"inputs": "man swollowing large water mellon",
-})
-# You can access the image with PIL.Image for example
-import io
-from PIL import Image
-image = Image.open(io.BytesIO(image_bytes))
+pipe = StableVideoDiffusionPipeline.from_pretrained(
+    "stabilityai/stable-video-diffusion-img2vid-xt", torch_dtype=torch.float16, variant="fp16"
+)
+pipe.enable_model_cpu_offload()
+
+# Load the conditioning image
+image = load_image("https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png")
+image = image.resize((1024, 576))
+
+generator = torch.manual_seed(42)
+frames = pipe(image, decode_chunk_size=8, generator=generator).frames[0]
+
+export_to_video(frames, "generated.mp4", fps=7)
