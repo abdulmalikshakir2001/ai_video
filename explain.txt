@@ -41,3 +41,6 @@ ENV NODE_ENV=production
 
 cead9c80-d4a9-4dc1-8fca-fc0a3e13163f
 price_1Q692M2MXTg6eduPd1MuDiYo
+https://youtu.be/nATRPPZ5dGE?si=KXGoi8tY79kNZkwO
+
+https://www.groovypost.com/howto/change-your-user-folder-name-in-windows-11/#:~:text=Open%20File%20Explorer%20and%20go,user%20folder%20and%20press%20Enter.
