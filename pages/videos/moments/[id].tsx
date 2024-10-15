@@ -20,7 +20,38 @@ const FetchingVideo: NextPageWithLayout = () => {
   const { t } = useTranslation('common');
   const router = useRouter();
   const { id } = router.query;
-  const [videoClips, setVidoClips] = useState<any[]>([]);
+  const [videoClips, setVidoClips] = useState<any[]>([
+    // static data
+    // {
+    //   id: 1,
+    //   title: "Clip 1",
+    //   clipSrc: "/videos/video1.mp4",
+    //   clipSubtitledSrc: "/videos/video1.mp4",
+    //   srtSrc: "/subtitles/sub1.srt"
+    // },
+    // {
+    //   id: 2,
+    //   title: "Clip 1",
+    //   clipSrc: "/videos/video2.mp4",
+    //   clipSubtitledSrc: "/videos/video2.mp4",
+    //   srtSrc: "/subtitles/sub2.srt"
+    // },
+    // {
+    //   id: 3,
+    //   title: "Clip 1",
+    //   clipSrc: "/videos/video3.mp4",
+    //   clipSubtitledSrc: "/videos/video3.mp4",
+    //   srtSrc: "/subtitles/sub3.srt"
+    // },
+    // {
+    //   id: 4,
+    //   title: "Clip 1",
+    //   clipSrc: "/videos/video4.mp4",
+    //   clipSubtitledSrc: "/videos/video4.mp4",
+    //   srtSrc: "/subtitles/sub4.srt"
+    // },
+
+  ]);
 
   const [subtitles, setSubtitles] = useState<Record<number, Subtitle[]>>({});
   const [currentSubtitleIndex, setCurrentSubtitleIndex] = useState<Record<number, number | null>>({});
@@ -28,7 +59,7 @@ const FetchingVideo: NextPageWithLayout = () => {
   // const [subtitlesContent, setSubtitlesContent] = useState<string>("");
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const [processingState, setProcessingState] = useState<Record<number, boolean>>({});
-  const config = {
+  const [config, setConfig] = useState({
     device: "cpu",
     // video_file: absoluteFilePath,
     audio_file: "audio.mp3", // audio file name
@@ -67,10 +98,19 @@ const FetchingVideo: NextPageWithLayout = () => {
       margin_l: 10,
       margin_r: 10,
       margin_v: 50,
-      encoding: 0,
-      xPosition: 10, // Default position
-      yPosition: -30, // Default position
-      textShadow: `#1CFFDD 6px 0px 5px, 
+      encoding: 0
+    },
+    // background_music: toggleStates.magicMusic,
+    music_volume: 1.0,
+    // music_file:path.join(process.cwd(), 'file_music'),
+    // cropping: toggleStates.magicFrame,
+    pyannote_auth_token: process.env.PYANNOTE_AUTH_TOKEN,
+    aspect_ratio: [9, 16]
+  })
+   
+  
+
+  const textShadow =  `#1CFFDD 6px 0px 5px, 
       #1CFFDD 5px 1px 5px, 
       #1CFFDD 4px 3px 5px, 
       #1CFFDD 3px 5px 5px, 
@@ -90,16 +130,7 @@ const FetchingVideo: NextPageWithLayout = () => {
       #1CFFDD 1px -6px 5px, 
       #1CFFDD 2px -4px 5px, 
       #1CFFDD 3px -3px 5px, 
-      #1CFFDD 4px -1px 5px`,
-    },
-    // background_music: toggleStates.magicMusic,
-    music_volume: 1.0,
-    // music_file:path.join(process.cwd(), 'file_music'),
-    // cropping: toggleStates.magicFrame,
-    pyannote_auth_token: process.env.PYANNOTE_AUTH_TOKEN,
-    aspect_ratio: [9, 16]
-  }
-
+      #1CFFDD 4px -1px 5px`
  
 
   useEffect(() => {
@@ -192,7 +223,7 @@ const FetchingVideo: NextPageWithLayout = () => {
         }}
       >
         {words.map((word, index) => (
-          <span key={index} style={{ color: index === highlightedWordIndex[videoId] ? config.font.highlight_color : config.font.primary_color, textShadow: index === highlightedWordIndex[videoId] ? config.font.textShadow : " ", fontSize: index === highlightedWordIndex[videoId] ? '20px' : '',
+          <span key={index} style={{ color: index === highlightedWordIndex[videoId] ? config.font.highlight_color : config.font.primary_color, textShadow: index === highlightedWordIndex[videoId] ? textShadow : " ", fontSize: index === highlightedWordIndex[videoId] ? '20px' : '',
             transition: 'transform 0.3s ease',
             fontWeight: 600 }}>
             {word}{" "}
@@ -258,7 +289,7 @@ const FetchingVideo: NextPageWithLayout = () => {
       })
       .then((res) => {
         console.log(res.data.data)
-        setVidoClips(res.data.data)
+        // setVidoClips(res.data.data)
 
       });
 
@@ -297,7 +328,7 @@ const FetchingVideo: NextPageWithLayout = () => {
                     className="relative">
 
                     <video
-                      src={`/api/loadVideo/${clip.clipSubtitledSrc}`}
+                      src={`${clip.clipSubtitledSrc}`}
                       controls={true}
                       className='bg-black w-[280px] h-[500px] object-cover'
                       ref={(el) => { videoRefs.current[clip.id] = el; }}
@@ -309,7 +340,7 @@ const FetchingVideo: NextPageWithLayout = () => {
                       bottom: "20px",
                       right: '10px',
                       letterSpacing: `${config.font.spacing}px`,
-                      transform: `translateX(${config.font.xPosition}px) translateY(${config.font.yPosition}px) rotate(-${config.font.angle}deg) scale(1)`,
+                      transform: `translateX(10px) translateY(-30px) rotate(-${config.font.angle}deg) scale(1)`,
                       padding: '0.5rem 1rem',
                       textShadow: `2px 2px 0px rgba(0, 0, 0, 1),
                                   2px 2px -1px rgba(0, 0, 0, 1)`,

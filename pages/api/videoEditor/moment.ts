@@ -166,7 +166,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           // Cleanup after sending the file
           fileStream.on('end', () => {
             fs.unlinkSync(outputVideoPath);
-            // fs.unlinkSync(tempAssSubtitlesPath);
+            fs.unlinkSync(tempAssSubtitlesPath);
           });
         });
       });

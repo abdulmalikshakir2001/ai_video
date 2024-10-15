@@ -1,41 +1,0 @@
-
-[Script Info]
-ScriptType: v4.00+
-PlayResX: 1920
-PlayResY: 1080
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Montserrat,38,&Hffffff,&Hffffff,&H00000000,&H00000000,-1,0,0,0,100,100,0,5,1,0,1,2,10,10,50,1
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,00:00:00.78,00:00:01.49,Default,,0,0,0,, {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}the{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} answer is everyone
-Dialogue: 0,00:00:01.49,00:00:02.19,Default,,0,0,0,,the {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}answer{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} is everyone
-Dialogue: 0,00:00:02.19,00:00:02.90,Default,,0,0,0,,the answer {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}is{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} everyone
-Dialogue: 0,00:00:02.90,00:00:03.60,Default,,0,0,0,,the answer is {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}everyone{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} 
-Dialogue: 0,00:00:03.60,00:00:04.05,Default,,0,0,0,, {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}all{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} the big players are part of this
-Dialogue: 0,00:00:04.05,00:00:04.51,Default,,0,0,0,,all {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}the{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} big players are part of this
-Dialogue: 0,00:00:04.51,00:00:04.96,Default,,0,0,0,,all the {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}big{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} players are part of this
-Dialogue: 0,00:00:04.96,00:00:05.42,Default,,0,0,0,,all the big {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}players{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} are part of this
-Dialogue: 0,00:00:05.42,00:00:05.87,Default,,0,0,0,,all the big players {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}are{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} part of this
-Dialogue: 0,00:00:05.87,00:00:06.33,Default,,0,0,0,,all the big players are {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}part{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} of this
-Dialogue: 0,00:00:06.33,00:00:06.78,Default,,0,0,0,,all the big players are part {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}of{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} this
-Dialogue: 0,00:00:06.78,00:00:07.24,Default,,0,0,0,,all the big players are part of {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}this{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} 
-Dialogue: 0,00:00:07.24,00:00:07.63,Default,,0,0,0,, {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}race{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} because if they're not Silicon
-Dialogue: 0,00:00:07.63,00:00:08.02,Default,,0,0,0,,race {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}because{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} if they're not Silicon
-Dialogue: 0,00:00:08.02,00:00:08.41,Default,,0,0,0,,race because {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}if{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} they're not Silicon
-Dialogue: 0,00:00:08.41,00:00:08.80,Default,,0,0,0,,race because if {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}they're{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} not Silicon
-Dialogue: 0,00:00:08.80,00:00:09.19,Default,,0,0,0,,race because if they're {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}not{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} Silicon
-Dialogue: 0,00:00:09.19,00:00:09.58,Default,,0,0,0,,race because if they're not {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}Silicon{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} 
-Dialogue: 0,00:00:09.58,00:00:10.26,Default,,0,0,0,, {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}Valley{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} could become the next Rust Belt
-Dialogue: 0,00:00:10.26,00:00:10.95,Default,,0,0,0,,Valley {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}could{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} become the next Rust Belt
-Dialogue: 0,00:00:10.95,00:00:11.64,Default,,0,0,0,,Valley could {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}become{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} the next Rust Belt
-Dialogue: 0,00:00:11.64,00:00:12.32,Default,,0,0,0,,Valley could become {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}the{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} next Rust Belt
-Dialogue: 0,00:00:12.32,00:00:13.01,Default,,0,0,0,,Valley could become the {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}next{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} Rust Belt
-Dialogue: 0,00:00:13.01,00:00:13.69,Default,,0,0,0,,Valley could become the next {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}Rust{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} Belt
-Dialogue: 0,00:00:13.69,00:00:14.38,Default,,0,0,0,,Valley could become the next Rust {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}Belt{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} 
-Dialogue: 0,00:00:14.38,00:00:14.95,Default,,0,0,0,, {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}also{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} anyone who's interested in security
-Dialogue: 0,00:00:14.95,00:00:15.53,Default,,0,0,0,,also {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}anyone{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} who's interested in security
-Dialogue: 0,00:00:15.53,00:00:16.10,Default,,0,0,0,,also anyone {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}who's{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} interested in security
-Dialogue: 0,00:00:16.10,00:00:16.67,Default,,0,0,0,,also anyone who's {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}interested{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} in security
-Dialogue: 0,00:00:16.67,00:00:17.25,Default,,0,0,0,,also anyone who's interested {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}in{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} security
-Dialogue: 0,00:00:17.25,00:00:17.82,Default,,0,0,0,,also anyone who's interested in {\c&Hff0000&\bord5\shad0\3c&Hddff1c&\fscx150\fscy150}security{\c&Hffffff&\bord1\3c&H00000000&\fscx100\fscy100} 
