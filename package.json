@@ -83,6 +83,7 @@
     "sharp": "0.33.4",
     "slack-notify": "2.0.7",
     "stripe": "^15.7.0",
+    "subtitle": "^4.2.1",
     "svix": "1.24.0",
     "swr": "2.2.5",
     "video-react": "^0.16.0",

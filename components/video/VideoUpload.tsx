@@ -153,7 +153,7 @@ const VideoUpload: React.FC = () => {
         >
           <FaPlus className="text-purple-500 text-xl md:text-2xl lg:text-3xl" />
         </div>
-        {video.map((clip, index) =>
+        {video && video.map((clip, index) =>
           clip.originalLink  ? (
             <div
               key={index}

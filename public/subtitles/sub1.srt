@@ -1,0 +1,51 @@
+1
+00:00:00,120 --> 00:00:02,700
+we all know that digital computers
+
+2
+00:00:02,700 --> 00:00:05,640
+change virtually every aspect of our
+
+3
+00:00:05,640 --> 00:00:07,080
+life
+
+4
+00:00:07,080 --> 00:00:09,300
+well the arrival of quantum computers
+
+5
+00:00:09,300 --> 00:00:12,300
+could be even more historic than that
+
+6
+00:00:12,300 --> 00:00:15,480
+we're now on the initial stages of the
+
+7
+00:00:15,480 --> 00:00:18,359
+next Revolution we're talking about a
+
+8
+00:00:18,359 --> 00:00:21,539
+new generation of computers the ultimate
+
+9
+00:00:21,539 --> 00:00:23,939
+computer a computer that computes an
+
+10
+00:00:23,939 --> 00:00:26,279
+atoms the ultimate constituents of
+
+11
+00:00:26,279 --> 00:00:28,039
+matter itself
+
+12
+00:00:28,039 --> 00:00:31,260
+the question is who's involved in this
+
+13
+00:00:31,260 --> 00:00:33,780
+race to perfect quantum computers and
