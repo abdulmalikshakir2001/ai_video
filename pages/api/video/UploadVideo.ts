@@ -68,7 +68,7 @@ async function handlePOST(req: NextApiRequest, res: NextApiResponse) {
     });
 
     if (!subscription) {
-      return res.json({ status: 'false', message: 'payment required', data: 'payment' });
+      return res.json({ status: 'subscription required', message: 'payment required', data: 'payment' });
     }
 
     // Check subscription limits

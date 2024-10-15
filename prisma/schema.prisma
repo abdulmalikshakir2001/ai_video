@@ -213,6 +213,7 @@ model VideoClips {
   exportId      String?       @unique
   clipSrc       String?
   assSrc       String?
+  tranSrc       String?
   srtSrc       String?
   clipSubtitledSrc       String?
   audioSrc       String?

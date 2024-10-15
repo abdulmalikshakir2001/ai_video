@@ -147,11 +147,16 @@ console.log('Folder path:', folderPath);
 
 
 // Convert the config to JSON and pass it to Python script
-const pythonProcess = spawn('python', [pythonScriptPath, JSON.stringify(config)]);
+// const pythonProcess = spawn('python', [pythonScriptPath, JSON.stringify(config)]);
+console.log('spawn process begins to start')
+const pythonProcess = spawn(path.join(process.cwd(), 'myenv', 'Scripts', 'python.exe'), [pythonScriptPath, JSON.stringify(config)]);
+console.log('spawn process begins to start')
+
+
 
 // Listen for data from Python script
 pythonProcess.stdout.on('data', (data) => {
-    console.log(`Python Output: ${data.toString()}`);
+    console.log(`${data.toString()}`);
 });
 
 // Listen for errors
@@ -162,20 +167,22 @@ pythonProcess.stderr.on('data', (data) => {
 // Handle the close event
 pythonProcess.on('close', async () => {
   try {
-    const startIndex = dirPath.indexOf('/videos');
-    const endIndex = dirPath.indexOf('/clips') + '/clips'.length;
-    let extractedPath = dirPath.substring(startIndex, endIndex);
-    if (extractedPath.startsWith('/')) {
-      extractedPath = extractedPath.substring(1);
-    }
+    let normalizedDirPath = dirPath.replace(/\\/g, '/'); // Replace backslashes with forward slashes
+const startIndex = normalizedDirPath.indexOf('/videos');
+const endIndex = normalizedDirPath.indexOf('/clips') + '/clips'.length;
+let extractedPath = normalizedDirPath.substring(startIndex, endIndex);
+if (extractedPath.startsWith('/')) {
+  extractedPath = extractedPath.substring(1);
+}
     // Read all files from the directory
     const files = fs.readdirSync(dirPath);
     // Regular expression to match files with numbers before '.mp4'
     const regexMp4 = /_\d+\.mp4$/;
     const regexSrt = /_\d+_srt\.srt$/;
-    const regexAss = /_\d+_ass\.ass$/;
+    // const regexAss = /_\d+_ass\.ass$/;
+    const regexTran = /_\d+_transcription\.json$/;
     const regexAudio = /_\d+_audio\.mp3$/;
-    const regexSubtitled = /_\d+_output\.mp4$/;
+    // const regexSubtitled = /_\d+_output\.mp4$/;
 
     // Filter files and map them according to their types
     const clipsArray = files
@@ -185,17 +192,20 @@ pythonProcess.on('close', async () => {
 
         // Look for associated files based on the prefix (e.g., clip_1)
         const srtFile = files.find(f => f.startsWith(baseName) && regexSrt.test(f));
-        const assFile = files.find(f => f.startsWith(baseName) && regexAss.test(f));
+        // const assFile = files.find(f => f.startsWith(baseName) && regexAss.test(f));
+        const tranFile = files.find(f => f.startsWith(baseName) && regexTran.test(f));
         const audioFile = files.find(f => f.startsWith(baseName) && regexAudio.test(f));
-        const subtitledFile = files.find(f => f.startsWith(baseName) && regexSubtitled.test(f));
+        // const subtitledFile = files.find(f => f.startsWith(baseName) && regexSubtitled.test(f));
         return {
           clipSrc: path.join(extractedPath, file), // Full path for clip
           srtSrc: srtFile ? path.join(extractedPath, srtFile) : null, // Full path for .srt
-          assSrc: assFile ? path.join(extractedPath, assFile) : null, // Full path for .ass
+          // assSrc: assFile ? path.join(extractedPath, assFile) : null, // Full path for .ass
+          tranSrc: tranFile ? path.join(extractedPath, tranFile) : null, 
           audioSrc: audioFile ? path.join(extractedPath, audioFile) : null, // Full path for .wav
-          clipSubtitledSrc: subtitledFile ? path.join(extractedPath, subtitledFile) : null, // Full path for subtitled .mp4
+          // clipSubtitledSrc: subtitledFile ? path.join(extractedPath, subtitledFile) : null, // Full path for subtitled .mp4
         };
       });
+      
 
     // Loop through the array and store each clip and its associated paths in the database
     for (const clipData of clipsArray) {
@@ -203,9 +213,10 @@ pythonProcess.on('close', async () => {
       await createVideoClip({
         clipSrc: clipData.clipSrc,
         srtSrc: clipData.srtSrc,
-        assSrc: clipData.assSrc,
+        assSrc:'ass.ass',   //clipData.assSrc,
+        tranSrc:clipData.tranSrc,   
         audioSrc: clipData.audioSrc,
-        clipSubtitledSrc: clipData.clipSubtitledSrc,
+        clipSubtitledSrc:'subtitled.mp4',  //clipData.clipSubtitledSrc,
         videoId: videoId,
         config:config
       });

@@ -70,6 +70,10 @@ const VideoUpload: React.FC = () => {
         router.push(`/dashboard/manageSubscription`);
         toast.error('Please upgrade subscription plan');
       }
+      else if (response.data.status === 'subscription required') {
+        router.push(`/pricing`);
+        toast.error('subscription required');
+      }
        else {
         toast.error('Error uploading video');
       }

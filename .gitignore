@@ -63,3 +63,4 @@ yarn-error.log*
 video_processing.log
 *.log
 /uploads
+ai_features/
