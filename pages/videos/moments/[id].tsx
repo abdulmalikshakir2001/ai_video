@@ -15,6 +15,7 @@ const FetchingVideo: NextPageWithLayout = () => {
   const { id } = router.query;
   const [videoClips, setVideoClips] = useState<any[]>([]);
   const [currentWord, setCurrentWord] = useState<{ [key: string]: string }>({});
+  const [isProcessing, setIsProcessing] = useState<{ [key: string]: boolean }>({})
   const [subtitleStyle] = useState({
     fontSize: '20px',
     color: 'white',
@@ -24,7 +25,7 @@ const FetchingVideo: NextPageWithLayout = () => {
     transform: 'translateX(-50%)',
     currentWordColor:'white',
     borderRadius:'10px',
-    fontFamily:'Roboto',
+    fontFamily:'Montserrat',
     fontWeight:600,
     letterSpacing:'',
     textTransform:'uppercase',
@@ -127,6 +128,51 @@ const FetchingVideo: NextPageWithLayout = () => {
     });
   };
 
+
+  const handleDownload = async (clip: any) => {
+    try {
+      // Set processing to true for this clip
+      setIsProcessing((prevState) => ({
+        ...prevState,
+        [clip.id]: true,
+      }));
+  
+      // Trigger the video download by calling the API
+      const response = await axios.post(
+        '/api/generateSubtitles/generateSubtitles',
+        {
+          subtitleStyle: {
+            ...subtitleStyle,
+            transcriptionPath: `${clip.tranSrc}`, // Include the transcription file path
+          },
+          videoClipPath: `${clip.clipSrc}`, // Path for the video clip
+        },
+        {
+          responseType: 'blob', // Important: Set response type to blob to handle binary stream
+        }
+      );
+  
+      // Create a Blob URL for the video stream
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${'video'}.mp4`); // Name the downloaded file
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading the video:', error);
+    } finally {
+      // Set processing to false after request completes
+      setIsProcessing((prevState) => ({
+        ...prevState,
+        [clip.id]: false,
+      }));
+    }
+  };
+  
+  
+
   return (
     <>
       <Head>
@@ -138,8 +184,6 @@ const FetchingVideo: NextPageWithLayout = () => {
             {t('home')}
           </button>
         </Link>
-
-        
 
         <div className="flex flex-col gap-10 mt-7 w-full max-w-4xl">
           {videoClips.map((clip, index) => (
@@ -205,12 +249,20 @@ const FetchingVideo: NextPageWithLayout = () => {
                       <button className="bg-blue-500 flex justify-center items-center gap-2 text-white px-4 py-2 rounded">
                         <IoFilmOutline /> {t('Edit')}
                       </button>
+                      
 
                       <button
-                        className="border-2 flex justify-center items-center gap-2 shadow-lg px-4 py-2 rounded"
-                      >
-                        <IoDownloadOutline />
-                      </button>
+  className="border-2 flex justify-center items-center gap-2 shadow-lg px-4 py-2 rounded"
+  onClick={() => handleDownload(clip)}
+  disabled={isProcessing[clip.id]} // Disable the button when processing
+>
+  {isProcessing[clip.id] ? 'Processing...' : <><IoDownloadOutline /> {"Download"}</>} {/* Conditionally show "Processing" */}
+</button>
+
+
+
+
+
                     </div>
                   </div>
                 </div>
