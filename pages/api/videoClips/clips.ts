@@ -167,7 +167,7 @@ pythonProcess.stderr.on('data', (data) => {
 // Handle the close event
 pythonProcess.on('close', async () => {
   try {
-    let normalizedDirPath = dirPath.replace(/\\/g, '/'); // Replace backslashes with forward slashes
+    const normalizedDirPath = dirPath.replace(/\\/g, '/'); // Replace backslashes with forward slashes
 const startIndex = normalizedDirPath.indexOf('/videos');
 const endIndex = normalizedDirPath.indexOf('/clips') + '/clips'.length;
 let extractedPath = normalizedDirPath.substring(startIndex, endIndex);

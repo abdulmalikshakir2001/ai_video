@@ -401,7 +401,6 @@ def videoProcessing(config):
         result = transcribe_audio(config,filenameWithOutExt)
         aligned_result = align_transcription(result, config,filenameWithOutExt)
         generate_srt_file_from_align_result(aligned_result,config,filenameWithOutExt)
-        
         diarized_result = diarization(aligned_result, config,filenameWithOutExt)
         generate_json_file_from_diarized_result(diarized_result, config, filenameWithOutExt)
         # grouped_segments = generate_subtitles_with_emotions(diarized_result["segments"], config,filenameWithOutExt)

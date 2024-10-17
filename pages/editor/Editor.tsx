@@ -41,12 +41,16 @@ interface FontStyle {
   const { values } = useEditorContext(); // Access context values
   useEffect(()=>{
     console.log(values)
-  },[values,useEditorContext])
+  },[values])
 
   const [momentData, setMomentData] = useState<any>(null);
   const [subtitlesUrl, setSubtitlesUrl] = useState<string>(
     momentData && `/api/loadVideo/${momentData.srtSrc}`
   );
+  useEffect(()=>{
+    console.log(subtitlesUrl)
+
+  },[subtitlesUrl])
   
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [subtitlesContent, setSubtitlesContent] = useState<string>("");
@@ -125,17 +129,12 @@ interface FontStyle {
           console.error("Failed to fetch moment data:", error);
         }
       };
-
       fetchClipData(momentId); // Call the function when the moment query param is present
     }
   }, [router.query.moment]);
   useEffect(()=>{
     setSubtitlesUrl(momentData && `/api/loadVideo/${momentData.srtSrc}`)
-
   },[momentData,subtitlesUrl])
- 
-
-
   const handleCutVideo = (start: number, end: number) => {
     setStartTime(start);
     setEndTime(end);
@@ -143,7 +142,6 @@ interface FontStyle {
   const handleFontStyleChange = (newFontStyle: FontStyle) => {
     setFontStyle(newFontStyle);
   };
-
   useEffect(() => {
     const fetchAndParseSubtitles = async () => {
       try {
