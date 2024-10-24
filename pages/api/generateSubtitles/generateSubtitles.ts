@@ -5,151 +5,272 @@ import fs from 'fs';
 
 import { exec } from 'child_process';
 
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  const { method } = req;
 
-
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const { method } = req;
-  
-    try {
-      switch (method) {
-        case 'POST':
-          if (req.body.subtitleStyle && req.body.videoClipPath) {
-            // Handle video processing with subtitle overlay
-            await handlePOST(req, res);
-          } else {
-            res.status(400).json({ error: 'Subtitle style and video clip path are required' });
-          }
-          break;
-        default:
-          res.setHeader('Allow', 'POST');
-          res.status(405).json({ error: `Method ${method} Not Allowed` });
-      }
-    } catch (error: any) {
-      console.error('Error processing video:', error);
-      res.status(500).json({ error: 'Failed to process video' });
+  try {
+    switch (method) {
+      case 'POST':
+        if (req.body.subtitleStyle && req.body.videoClipPath) {
+          // Handle video processing with subtitle overlay
+          await handlePOST(req, res);
+        } else {
+          res
+            .status(400)
+            .json({ error: 'Subtitle style and video clip path are required' });
+        }
+        break;
+      default:
+        res.setHeader('Allow', 'POST');
+        res.status(405).json({ error: `Method ${method} Not Allowed` });
     }
+  } catch (error: any) {
+    console.error('Error processing video:', error);
+    res.status(500).json({ error: 'Failed to process video' });
   }
+}
+// Utility function to create the .ass file content
+// Utility function to create the .ass file content
 
-// Utility function to create the .ass file content
-// Utility function to create the .ass file content
 function createAssFile(transcriptionData: any, subtitleStyle: any) {
-    const transcription = JSON.parse(transcriptionData);
-  
-    let assContent = `
-  [Script Info]
-  Title: ${subtitleStyle.title || 'Subtitles'}
-  ScriptType: v4.00+
-  Collisions: Normal
-  PlayDepth: 0
-  
-  [V4+ Styles]
-  Format: Name, Fontname, Fontsize, PrimaryColour, BackColour, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-  Style: Default,${subtitleStyle.fontFamily},${subtitleStyle.fontSize},&H${subtitleStyle.currentWordColor.replace('#', '')},&H${subtitleStyle.currentWordBg.replace('#', '')},1,1,0,2,10,10,${subtitleStyle.bottom},0
-  
-  [Events]
-  Format: Layer, Start, End, Style, Text
-  `;
-  
-    // Iterate through each transcription segment
-    transcription.segments.forEach((segment: any) => {
-      const words = segment.words;
-      
-      // Group words in sets of three
-      for (let i = 0; i < words.length; i += 3) {
-        const wordGroup = words.slice(i, i + 3);
-        
-        // Set the start time as the start of the first word and end time as the end of the last word in the group
-        const groupStartTime = formatTime(wordGroup[0].start);
-        const groupEndTime = formatTime(wordGroup[wordGroup.length - 1].end);
-        
-        // Join the words in the group to form the subtitle text
-        const subtitleText = wordGroup.map((word: any) => word.word).join(' ');
-  
-        // Add the subtitle event to the .ass file content
-        assContent += `Dialogue: 0,${groupStartTime},${groupEndTime},Default,,0,0,0,,${subtitleText}\n`;
+  const transcription = JSON.parse(transcriptionData);
+  let assContent = `
+[Script Info]
+Title: Subtitles
+ScriptType: v4.00+
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,40,&H00FFFFFF,&H00000000,&H00000000,&H00000000,1,1,0,2,10,10,30,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`;
+
+  let lastWordEndTime = 0; // Variable to store the last word's end time across segments
+
+  const modifiedSegments = transcription.segments.map((segment: any) => {
+    const modifiedWords = segment.words.map((word: any, index: number) => {
+      // Handle missing start time
+      if (!word.start) {
+          word.start = 0.00;
+        if (index > 0 && segment.words[index - 1].end) {
+          word.start = segment.words[index - 1].end ; // Use previous word's end time as start time
+        } else if (index === 0 && lastWordEndTime) {
+          word.start = lastWordEndTime ; // Use last word's end time from the previous segment
+        }
       }
+
+      // Handle missing end time
+      if (!word.end && index < segment.words.length - 1) {
+        word.end = segment.words[index + 1].start ; // Use next word's start time as end time
+      }
+
+      // Update the lastWordEndTime for the next segment
+      lastWordEndTime = word.end || lastWordEndTime ;
+
+      return {
+        word: word.word,
+        start: word.start,
+        end: word.end,
+        score: word.score,
+        speaker: word.speaker,
+      };
     });
-  
-    return assContent;
+
+    return {
+      start: segment.start,
+      end: segment.end,
+      text: segment.text,
+      words: modifiedWords,
+      speaker: segment.speaker,
+    };
+  });
+
+  // Return or log the modified transcription structure
+
+  // Iterate through each transcription segment
+  modifiedSegments.forEach((segment: any, segIndex: number) => {
+    const words = segment.words;
+
+    for (let i = 0; i < words.length; i += 3) {
+      const wordGroup = words.slice(i, i + 3);
+
+      // Get the start time of the first word in the group
+      const threeWordGroupStartTime = wordGroup[0].start; // Fallback to previous end time
+      const threeWordGroupEndTime = wordGroup[wordGroup.length - 1].end;
+      // ------------------------------->
+      const WHITE_COLOR = '\\1c&HFFFFFF&';
+      const GREEN_COLOR = '\\1c&H00FF00&';
+
+      const modifiedWords = words.map((word: any, index: number) => {
+        // Handle missing start time
+        if (!word.start) {
+          if (index > 0 && words[index - 1].end) {
+            word.start = words[index - 1].end; // Use previous word's end time as start time
+          }
+        }
+
+        // Handle missing end time
+        if (!word.end && index < words.length - 1) {
+          word.end = words[index + 1].start; // Set to next word's start or add default duration
+        }
+
+        return word;
+      });
+
+      
+            
+      let command = '';
+      // ------------------------------->
+
+      const updatedWordGroup = wordGroup.map((word: any, index: number) => {
+        if (!word.start || !word.end) {
+          // Use previous word's end time as the current word's start time if missing
+          if (index > 0 && !word.start) {
+            word.start = wordGroup[index - 1].end || threeWordGroupStartTime;
+          }
+          // Use the next word's start time as the current word's end time if missing
+          if (index < wordGroup.length - 1 && !word.end) {
+            word.end = wordGroup[index + 1].start || threeWordGroupEndTime;
+          }
+        }
+        return word;
+      });
+
+      // Handle missing start and end times
+      wordGroup.forEach((word: any, index: number) => {
+        const wordRange = Math.round(((word.end-word.start)*1000));
+        // ------------------------------->
+        if ( index === 0 ){
+          const tag = `{${WHITE_COLOR}\\t(${0},${wordRange},${GREEN_COLOR})\\t(${wordRange},${wordRange},${WHITE_COLOR})}${word.word} {${WHITE_COLOR}\\t(${wordRange},${wordRange},${GREEN_COLOR})`;
+          command += tag;
+        }
+
+        else if(index === 1){
+          const tag = `\\t(${wordRange},${wordRange},${WHITE_COLOR})}${word.word} {${WHITE_COLOR}\\t(${wordRange},${wordRange},${GREEN_COLOR})`
+          command += tag;
+        }
+        else if(index === 2){
+          const tag = `\\t(${wordRange},${wordRange},${WHITE_COLOR})}${word.word}`
+          command += tag;
+        }
+        
+        
+
+        // ------------------------------->
+      });
+
+      // ------------------------------->
+
+      command = command.trim();
+      // ------------------------------->
+
+      const threeWordGroupStartTimeFormatted = formatTime(
+        threeWordGroupStartTime
+      );
+      const threeWordGroupEndTimeFormatted = formatTime(threeWordGroupEndTime);
+
+      const dialogue = `Dialogue: 0,${threeWordGroupStartTimeFormatted},${threeWordGroupEndTimeFormatted},Default,,0,0,0,,${command}\n`;
+      // const text = wordGroup.map((word: any) => word.word).join(' ');
+      assContent += dialogue;
+
+      // Update the previousEndTime to the current group's end time for the next group
+    }
+  });
+
+  return assContent;
+}
+
+// Utility function to format time for .ass file
+function formatTime(seconds: number) {
+  if (isNaN(seconds) || seconds === undefined || seconds === null) {
+    return '0:00:00.00'; // Default to 0 if the time is invalid
   }
-  
-  // Utility function to format time for .ass file
-  function formatTime(seconds: number) {
-    const hours = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-    const secs = (seconds % 60).toFixed(2).padStart(5, '0');
-    return `${hours}:${minutes}:${secs}`;
-  }
-  
+  const hours = Math.floor(seconds / 3600)
+    .toString()
+    
+  const minutes = Math.floor((seconds % 3600) / 60)
+    .toString()
+    .padStart(2, '0');
+  const secs = (seconds % 60).toFixed(2).padStart(5, '0');
+  return `${hours}:${minutes}:${secs}`;
+}
+
 // Handle video processing with subtitle overlay
 const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
-    const { subtitleStyle, videoClipPath } = req.body;
-    try {
-      // Generate .ass subtitle file content
-      const transcriptionPath = path.join(process.cwd(), 'uploads', subtitleStyle.transcriptionPath);
-      
-      const transcriptionData = fs.readFileSync(transcriptionPath, 'utf-8');
-      console.log(subtitleStyle)
+  const { subtitleStyle, videoClipPath } = req.body;
+  try {
+    // Generate .ass subtitle file content
+    const transcriptionPath = path.join(
+      process.cwd(),
+      'uploads',
+      subtitleStyle.transcriptionPath
+    );
 
+    const transcriptionData = fs.readFileSync(transcriptionPath, 'utf-8');
+    console.log(subtitleStyle);
 
-      const assContent = createAssFile(transcriptionData, subtitleStyle);
-  
-      // Save the .ass subtitle file temporarily
+    const assContent = createAssFile(transcriptionData, subtitleStyle);
+
+    // Save the .ass subtitle file temporarily
     //   const assFilePath = path.join(process.cwd(),'public', `ass.ass`);
 
-      const assFilePath = path.posix.join('public', `ass.ass`).replace(/\\/g, '/').replace(/^\/+/, '');
+    const assFilePath = path.posix
+      .join('public', `ass.ass`)
+      .replace(/\\/g, '/')
+      .replace(/^\/+/, '');
 
+    fs.writeFileSync(assFilePath, assContent);
 
-      fs.writeFileSync(assFilePath, assContent);
-  
-      // Process the video with ffmpeg and overlay the subtitles
+    // Process the video with ffmpeg and overlay the subtitles
     //   const videoInputPath = path.join(process.cwd(), 'uploads', videoClipPath)
-      const videoInputPath = path.posix.join('uploads', videoClipPath).replace(/\\/g, '/').replace(/^\/+/, '');
+    const videoInputPath = path.posix
+      .join('uploads', videoClipPath)
+      .replace(/\\/g, '/')
+      .replace(/^\/+/, '');
 
-      
-      
     //   const outputVideoPath = path.join('public', 'resultVideo.mp4').replace(/\\/g, '/');
-      const outputVideoPath = path.posix.join('public', 'resultVideo.mp4').replace(/\\/g, '/').replace(/^\/+/, '');
+    const outputVideoPath = path.posix
+      .join('public', 'resultVideo.mp4')
+      .replace(/\\/g, '/')
+      .replace(/^\/+/, '');
 
-  
-      
-      exec(`ffmpeg -i ${videoInputPath} -vf "ass=${assFilePath}:fontsdir=public/fonts/" ${outputVideoPath}`, (error) => {
+    exec(
+      `ffmpeg -i ${videoInputPath} -vf "ass=${assFilePath}:fontsdir=public/fonts/" ${outputVideoPath}`,
+      (error) => {
         if (error) {
-            console.log(error);
-            return res.status(500).json({ error: 'Failed to process video' });
+          console.log(error);
+          return res.status(500).json({ error: 'Failed to process video' });
         }
-    
+
         // Set headers for video stream and download
         res.setHeader('Content-Type', 'video/mp4');
-        res.setHeader('Content-Disposition', `attachment; filename=${"processed_video.mp4"}`);
-        
-    
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename=${'processed_video.mp4'}`
+        );
+
         // Create a stream and pipe it to the response
         const fileStream = fs.createReadStream(outputVideoPath);
         fileStream.pipe(res);
         fileStream.on('error', (err) => {
-            console.error('Error streaming the video:', err);
-            res.status(500).json({ error: 'Failed to stream the video' });
+          console.error('Error streaming the video:', err);
+          res.status(500).json({ error: 'Failed to stream the video' });
         });
-    
+
         // Optional: clean up files after streaming
         fileStream.on('end', () => {
-            fs.unlinkSync(outputVideoPath); // Remove the output video after download
-            fs.unlinkSync(assFilePath); // Remove the subtitle file after download
+          // fs.unlinkSync(outputVideoPath); // Remove the output video after download
+          // fs.unlinkSync(assFilePath); // Remove the subtitle file after download
         });
-    });
-    
-    
-
-
-
-    
-      
-  
-      
-    } catch (error) {
-      console.error('Error processing video with subtitles:', error);
-      res.status(500).json({ error: 'Failed to generate video with subtitles' });
-    }
-  };
+      }
+    );
+  } catch (error) {
+    console.error('Error processing video with subtitles:', error);
+    res.status(500).json({ error: 'Failed to generate video with subtitles' });
+  }
+};

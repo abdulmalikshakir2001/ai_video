@@ -1,43 +1,455 @@
-# Make environment variables dynamic (loaded at runtime)
-ARG NEXTAUTH_URL
-ARG NEXTAUTH_SECRET
-ARG SMTP_HOST
-ARG SMTP_PORT
-ARG SMTP_USER
-ARG SMTP_PASSWORD
-ARG SMTP_FROM
-ARG DATABASE_URL
-ARG APP_URL
-ARG SVIX_URL
-ARG SVIX_API_KEY
-ARG GITHUB_CLIENT_ID
-ARG GITHUB_CLIENT_SECRET
-ARG GOOGLE_CLIENT_ID
-ARG GOOGLE_CLIENT_SECRET
-ARG STRIPE_SECRET_KEY
-ARG STRIPE_WEBHOOK_SECRET
+function createAssFile(transcriptionData: any, subtitleStyle: any) {
+    const transcription = JSON.parse(transcriptionData);
+    let assContent = `
+    [Script Info]
+    Title: ${'Subtitles'}
+    ScriptType: v4.00+
+    
+    [V4+ Styles]
+    Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+    Style: Default,${subtitleStyle.fontFamily},${subtitleStyle.fontSize.replace('px', '')},&H00FFFFFF,&H00000000,&H00000000,&H00000000,1,0,0,2,10,10,${subtitleStyle.bottom.replace('px', '')},0
+    
+    [Events]
+    Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+    `;
 
-# Set environment variables dynamically using ARG for better flexibility
-ENV NEXTAUTH_URL=$NEXTAUTH_URL
-ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
-ENV SMTP_HOST=$SMTP_HOST
-ENV SMTP_PORT=$SMTP_PORT
-ENV SMTP_USER=$SMTP_USER
-ENV SMTP_PASSWORD=$SMTP_PASSWORD
-ENV SMTP_FROM=$SMTP_FROM
-ENV DATABASE_URL=$DATABASE_URL
-ENV APP_URL=$APP_URL
-ENV SVIX_URL=$SVIX_URL
-ENV SVIX_API_KEY=$SVIX_API_KEY
-ENV GITHUB_CLIENT_ID=$GITHUB_CLIENT_ID
-ENV GITHUB_CLIENT_SECRET=$GITHUB_CLIENT_SECRET
-ENV GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
-ENV GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
-ENV STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY
-ENV STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET
+    let lastEndTime = 0; // Track the last word's end time to handle missing timestamps
 
-# Optional: Add any other dynamic variables
-ENV NODE_ENV=production
+    // Helper function to calculate exact box width based on text length, font size, and small padding
+    function calculateBoxWidth(text, fontSize) {
+        const charWidth = fontSize * 0.40; // Adjust the scaling factor
+        const textWidth = text.length * charWidth;
+        
+        return textWidth 
+    }
 
-cead9c80-d4a9-4dc1-8fca-fc0a3e13163f
-price_1Q692M2MXTg6eduPd1MuDiYo
+    // Helper function to calculate box height based on font size (no extra padding)
+    function calculateBoxHeight(fontSize) {
+        return fontSize; // Exact height based on font size
+    }
+
+    // Iterate through each transcription segment
+    transcription.segments.forEach((segment: any) => {
+        const words = segment.words;
+
+        // Group words in sets of three
+        for (let i = 0; i < words.length; i += 3) {
+            const wordGroup = words.slice(i, i + 3);
+
+            // Handle missing start/end times by using the last known end time
+            const groupStartTime = wordGroup[0].start ? formatTime(wordGroup[0].start) : formatTime(lastEndTime);
+            const groupEndTime = wordGroup[wordGroup.length - 1].end ? formatTime(wordGroup[wordGroup.length - 1].end) : formatTime(lastEndTime + 2); // Default 2-second duration
+
+            // Join the words in the group to form the subtitle text
+            const subtitleText = wordGroup.map((word: any) => word.word.toUpperCase()).join(' ');
+
+            // Update the last end time if the current group has valid end time
+            if (wordGroup[wordGroup.length - 1].end) {
+                lastEndTime = wordGroup[wordGroup.length - 1].end;
+            } else {
+                lastEndTime += 2; // If no valid end time, increment by 2 seconds
+            }
+
+            // Calculate box width and height based on text length and font size
+            const fontSize = parseInt(subtitleStyle.fontSize.replace('px', '')); // Get font size as a number
+            const boxWidth = calculateBoxWidth(subtitleText, fontSize); // Exact width based on text length + small padding
+            const boxHeight = calculateBoxHeight(fontSize); // Exact height based on font size
+            const cornerRadius = 10; // Corner radius for rounded corners
+
+            // Create the vector shape with rounded corners and dynamic width matching the text size
+            const roundedBox = `{\\1c&H00C1B6FF&\\p1}m ${cornerRadius} 0 l ${boxWidth - cornerRadius} 0 b ${boxWidth} 0 ${boxWidth} 0 ${boxWidth} ${cornerRadius} l ${boxWidth} ${boxHeight - cornerRadius} b ${boxWidth} ${boxHeight} ${boxWidth} ${boxHeight} ${boxWidth - cornerRadius} ${boxHeight} l ${cornerRadius} ${boxHeight} b 0 ${boxHeight} 0 ${boxHeight} 0 ${boxHeight - cornerRadius} l 0 ${cornerRadius} b 0 0 0 0 ${cornerRadius} 0{\\p0}`; // Rounded rectangle
+            const subtitleWithFade = `{\\fad(150,150)}${subtitleText}`;
+
+            // Add the background shape (on a lower layer, such as layer 0)
+            assContent += `Dialogue: 0,${groupStartTime},${groupEndTime},Default,,0,0,0,,${roundedBox}\n`; // Background on lower layer
+
+            // Add the text (on a higher layer, such as layer 1)
+            assContent += `Dialogue: 1,${groupStartTime},${groupEndTime},Default,,0,0,0,,${subtitleWithFade}\n`; // Text on higher layer
+        }
+    });
+
+    return assContent;
+}
+
+
+
+
+
+
+
+
+function createAssFile(transcriptionData: any, subtitleStyle: any) {
+  const transcription = JSON.parse(transcriptionData);
+  let assContent = `
+  [Script Info]
+  Title: ${'Subtitles'}
+  ScriptType: v4.00+
+  
+  [V4+ Styles]
+  Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+  Style: Default,${subtitleStyle.fontFamily},${subtitleStyle.fontSize.replace('px', '')},&H00FFFFFF,&H00000000,&H00000000,&H00000000,1,0,0,2,10,10,${subtitleStyle.bottom.replace('px', '')},0
+  
+  [Events]
+  Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+  `;
+
+  let lastEndTime = 0; // Track the last word's end time to handle missing timestamps
+
+  // Iterate through each transcription segment
+  transcription.segments.forEach((segment: any) => {
+      const words = segment.words;
+
+      // Group words in sets of three
+      for (let i = 0; i < words.length; i += 3) {
+          const wordGroup = words.slice(i, i + 3);
+
+          // Handle missing start/end times by using the last known end time
+          const groupStartTime = wordGroup[0].start ? formatTime(wordGroup[0].start) : formatTime(lastEndTime);
+          const groupEndTime = wordGroup[wordGroup.length - 1].end ? formatTime(wordGroup[wordGroup.length - 1].end) : formatTime(lastEndTime + 2); // Default 2-second duration
+
+          // Join the words in the group to form the subtitle text
+          const subtitleText = wordGroup.map((word: any) => word.word.toUpperCase()).join(' ');
+
+          // Update the last end time if the current group has valid end time
+          if (wordGroup[wordGroup.length - 1].end) {
+              lastEndTime = wordGroup[wordGroup.length - 1].end;
+          } else {
+              lastEndTime += 2; // If no valid end time, increment by 2 seconds
+          }
+
+          // Add the text (on a higher layer, such as layer 1)
+          const subtitleWithFade = `{\\fad(150,150)}${subtitleText}`;
+
+          // Add the subtitle text
+          assContent += `Dialogue: 1,${groupStartTime},${groupEndTime},Default,,0,0,0,,${subtitleWithFade}\n`;
+      }
+  });
+
+  return assContent;
+}
+
+
+
+
+
+
+
+
+word highlight with =======================>
+ const coloredWords = wordGroup.map((w: any, i: number) => {
+                  if (i === index) {
+                      return `{\\c&H00FFFF00}${w.word.toUpperCase()}`; // Yellow for the current word
+                  } else {
+                      return `{\\c&H00FFFFFF}${w.word.toUpperCase()}`; // White for the other words
+                  }
+              }).join(' ');
+
+              // Add the dialogue for each word transition
+              wordTimings.push(`Dialogue: 0,${wordStartTime},${wordEndTime},Default,,0,0,0,,${coloredWords}`);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              const WHITE_COLOR = "\\1c&HFFFFFF&";
+const GREEN_COLOR = "\\1c&H00FF00&";
+
+
+function createAssFile(transcriptionData: any, subtitleStyle: any) {
+  const transcription = JSON.parse(transcriptionData);
+  let assContent = `
+[Script Info]
+Title: Subtitles
+ScriptType: v4.00+
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,40,&H00FFFFFF,&H00000000,&H00000000,&H00000000,1,1,0,2,10,10,30,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`;
+
+  let previousEndTime = 0; // Store the end time of the previous dialogue
+
+  // Iterate through each transcription segment
+  transcription.segments.forEach((segment: any) => {
+    const words = segment.words;
+
+    
+    const timings = words.map((word: any) => Math.round(word.start * 1000)); // Convert start times to ms
+    timings.push(Math.round(words[words.length - 1].end * 1000)); // Append the final end time
+
+    // Convert the word list to the same format as in highlight_words_by_timing
+    const sentence = words.map((word: any) => word.word).join(' ');
+
+    // Apply the highlight_words_by_timing logic to get the formatted ASS dialogue
+    const highlightedDialogue = highlight_words_by_timing(timings, sentence);
+
+    // Calculate the start and end time of the segment
+    const segmentStartTime = words[0].start;
+    const segmentEndTime = words[words.length - 1].end;
+
+    // Format the time for ASS file
+    const segmentStartTimeFormatted = formatTime(segmentStartTime);
+    const segmentEndTimeFormatted = formatTime(segmentEndTime);
+
+    // Create the dialogue line for ASS file
+    const dialogue = `Dialogue: 0,${segmentStartTimeFormatted},${segmentEndTimeFormatted},Default,,0,0,0,,${highlightedDialogue}\n`;
+
+    assContent += dialogue;
+
+    // Update previousEndTime
+    previousEndTime = segmentEndTime;
+  });
+
+  return assContent;
+}
+// This function remains the same as in your highlight_words_by_timing implementation
+function highlight_words_by_timing(timings: number[], sentence: string): string {
+  if (timings.length !== sentence.split(' ').length + 1) {
+    throw new Error("Number of timings does not match the number of words plus one.");
+  }
+
+  const words = sentence.split(' ');
+
+  let command = "";
+
+  words.forEach((word, i) => {
+    const tag = `{${WHITE_COLOR}\\t(${timings[i]},${timings[i]},${GREEN_COLOR})\\t(${timings[i + 1]},${timings[i + 1]},${WHITE_COLOR})}${word} `;
+    command += tag;
+  });
+
+  return command.trim();
+}
+
+// Utility function to format time for ASS file
+function formatTime(seconds: number) {
+  if (isNaN(seconds) || seconds === undefined || seconds === null) {
+    return "00:00:00.00"; // Default to 0 if the time is invalid
+  }
+  const hours = Math.floor(seconds / 3600).toString().padStart(2, '0');
+  const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+  const secs = (seconds % 60).toFixed(2).padStart(5, '0');
+  return `${hours}:${minutes}:${secs}`;
+}
+highlight  word end ==============================>
+
+   =================================>>>
+
+function createAssFile(transcriptionData: any, subtitleStyle: any) {
+  const transcription = JSON.parse(transcriptionData);
+  let assContent = `
+[Script Info]
+Title: Subtitles
+ScriptType: v4.00+
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,40,&H00FFFFFF,&H00000000,&H00000000,&H00000000,1,1,0,2,10,10,30,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`;
+
+let lastWordEndTime = 0; // Variable to store the last word's end time across segments
+
+const modifiedSegments = transcription.segments.map((segment: any) => {
+  const modifiedWords = segment.words.map((word: any, index: number) => {
+      // Handle missing start time
+      if (!word.start) {
+          if (index > 0 && segment.words[index - 1].end) {
+              word.start = segment.words[index - 1].end; // Use previous word's end time as start time
+          } else if (index === 0 && lastWordEndTime) {
+              word.start = lastWordEndTime; // Use last word's end time from the previous segment
+          }
+      }
+
+      // Handle missing end time
+      if (!word.end && index < segment.words.length - 1) {
+          word.end = segment.words[index + 1].start; // Use next word's start time as end time
+      }
+
+      // Update the lastWordEndTime for the next segment
+      lastWordEndTime = word.end || lastWordEndTime;
+
+      return {
+          word: word.word,
+          start: word.start,
+          end: word.end,
+          score: word.score,
+          speaker: word.speaker,
+      };
+  });
+
+  return {
+      start: segment.start,
+      end: segment.end,
+      text: segment.text,
+      words: modifiedWords,
+      speaker: segment.speaker,
+  };
+});
+
+
+// Return or log the modified transcription structure
+
+
+  // Iterate through each transcription segment
+  modifiedSegments.forEach((segment: any,segIndex: number) => {
+    let words:any[] = [];
+    let borrowWordCount = 0 ;
+     words = segment.words;
+     if (borrowWordCount > 0) {
+      // Remove borrowWordCount items from the words array
+      words.splice(0, borrowWordCount);
+      borrowWordCount= 0 ;
+  }
+    
+    
+    for (let i = 0; i < words.length; i += 3) {
+      let wordGroup = words.slice(i, i + 3);
+
+      if(wordGroup.length < 3 && segIndex < modifiedSegments.length - 1 ){
+        const nextSegment = modifiedSegments[segIndex + 1];
+        const nextWords = nextSegment.words.slice(0, 3 - wordGroup.length);
+        borrowWordCount = nextWords.length
+        
+        wordGroup = [...wordGroup, ...nextWords];
+      }
+
+      // Get the start time of the first word in the group
+      const threeWordGroupStartTime = wordGroup[0].start  // Fallback to previous end time
+      const threeWordGroupEndTime = wordGroup[wordGroup.length - 1].end;
+// ------------------------------->
+const WHITE_COLOR = "\\1c&HFFFFFF&";
+const GREEN_COLOR = "\\1c&H00FF00&";
+
+const modifiedWords = words.map((word: any, index: number) => {
+  // Handle missing start time
+  if (!word.start) {
+    if (index > 0 && words[index - 1].end) {
+      word.start = words[index - 1].end; // Use previous word's end time as start time
+    }
+  }
+
+  // Handle missing end time
+  if (!word.end && index < words.length - 1) {
+    word.end = words[index + 1].start  // Set to next word's start or add default duration
+  }
+
+  return word;
+});
+
+      const timings = modifiedWords.map((word: any) => Math.round(word.start * 1000)); // Convert start times to ms
+      timings.push(Math.round(words[words.length - 1].end * 1000)); // Append the final end time
+      let command = "";
+// ------------------------------->
+
+
+const updatedWordGroup =  wordGroup.map((word: any, index: number) => {
+  if (!word.start || !word.end) {
+    // Use previous word's end time as the current word's start time if missing
+    if (index > 0 && !word.start) {
+      word.start = wordGroup[index - 1].end || threeWordGroupStartTime;
+    }
+    // Use the next word's start time as the current word's end time if missing
+    if (index < wordGroup.length - 1 && !word.end) {
+      word.end = wordGroup[index + 1].start || threeWordGroupEndTime;
+    }
+  }
+  return word;
+
+})
+
+
+
+      // Handle missing start and end times
+      updatedWordGroup.forEach((word: any, index: number) => {
+        
+// ------------------------------->
+
+        const tag = `{${WHITE_COLOR}\\t(${timings[index]},${timings[index]},${GREEN_COLOR})\\t(${timings[index + 1]},${timings[index + 1]},${WHITE_COLOR})}${word.word} `;
+    command += tag;
+    
+// ------------------------------->
+
+      });
+
+// ------------------------------->
+
+
+      command = command.trim();
+// ------------------------------->
+
+
+      
+      const threeWordGroupStartTimeFormatted = formatTime(threeWordGroupStartTime); 
+      const threeWordGroupEndTimeFormatted = formatTime(threeWordGroupEndTime);
+
+      
+      const dialogue = `Dialogue: 0,${threeWordGroupStartTimeFormatted},${threeWordGroupEndTimeFormatted},Default,,0,0,0,,${command}\n`;
+      // const text = wordGroup.map((word: any) => word.word).join(' ');
+      assContent += dialogue;
+
+      // Update the previousEndTime to the current group's end time for the next group
+    }
+  });
+
+  return assContent;
+}
+
+
+
+----->current word 
+
+[Script Info]
+Title: Example Subtitles
+ScriptType: v4.00+
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,40,&H00FFFFFF,&H00000000,&H00000000,&H00000000,1,1,0,2,10,10,30,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:00.67,Default,,0,0,0,,{\1c&HFFFFFF&\t(0,335,\1c&H00FF00&)\t(670,670,\1c&HFFFFFF&)}1%
+Dialogue: 0,0:00:00.67,0:00:01.29,Default,,0,0,0,,{\1c&HFFFFFF&\t(0, 100,\1c&H00FF00&)\t(100,100,\1c&HFFFFFF&)}of {\1c&HFFFFFF&\t(100,100,\1c&H00FF00&)\t(300,300,\1c&HFFFFFF&)}people
+Dialogue: 0,0:00:01.33,0:00:04.95,Default,,0,0,0,,{\1c&HFFFFFF&\t(0,60,\1c&H00FF00&)\t(60,60,\1c&HFFFFFF&)}in {\1c&HFFFFFF&\t(60,60,\1c&H00FF00&)\t(120,120,\1c&HFFFFFF&)}this {\1c&HFFFFFF&\t(120,120,\1c&H00FF00&)\t(361,361,\1c&HFFFFFF&)}country.
+-->basically transition works  relative to its dialogue time   if there are three words   "hi how are"   every word have   start and end time  e.g hi start time  is  1  and time is 2  similarly for all  combine dialogue time is 1-3  now for each word the transition duation will be  according  to start and end time  of word  
+
+{\1c&HFFFFFF&\t(0,60,\1c&H00FF00&)\t(60,60,\1c&HFFFFFF&)}in {\1c&HFFFFFF&\t(60,60,\1c&H00FF00&)\t(120,120,\1c&HFFFFFF&)}this
+\t(60,60,\1c&HFFFFFF&)     "in"  start and end time duration  (change second to ms) 
+\t(120,120,\1c&HFFFFFF&)  "this"
+
+
+
+
+[Script Info]
+Title: Example Subtitles
+ScriptType: v4.00+
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,40,&H00FFFFFF,&H00000000,&H00000000,&H00000000,1,1,0,2,10,10,30,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:00.67,Default,,0,0,0,,{\1c&HFFFFFF&\t(0,335,\1c&H00FF00&)\t(670,670,\1c&HFFFFFF&)}1%
+Dialogue: 0,0:00:00.67,0:00:01.29,Default,,0,0,0,,{\1c&HFFFFFF&\t(0, 100,\1c&H00FF00&)\t(100,100,\1c&HFFFFFF&)}of {\1c&HFFFFFF&\t(100,100,\1c&H00FF00&)\t(300,300,\1c&HFFFFFF&)}people
+Dialogue: 0,0:00:01.33,0:00:04.95,Default,,0,0,0,,{\1c&HFFFFFF&\t(0,60,\1c&H00FF00&)\t(60,60,\1c&HFFFFFF&)}in {\1c&HFFFFFF&\t(60,60,\1c&H00FF00&)\t(120,120,\1c&HFFFFFF&)}this {\1c&HFFFFFF&\t(120,120,\1c&H00FF00&)\t(361,361,\1c&HFFFFFF&)}country.
