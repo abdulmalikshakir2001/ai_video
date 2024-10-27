@@ -19,11 +19,11 @@ const FetchingVideo: NextPageWithLayout = () => {
   const [subtitleStyle] = useState({
     fontSize: '20px',
     color: 'white',  // &H00FFFFFF
-    currentWordBg: '#E4B1F0' , 
+    currentWordBg: '#E4B1F000' , //'#E4B1F0' , 
     bottom: '54px',
     left: '50%',
     transform: 'translateX(-50%)',
-    currentWordColor:'white',  // &H00FFFFFF
+    currentWordColor: '#00FF00' , //'white',  // &H00FFFFFF
     borderRadius:'10px',
     fontFamily:'Roboto',
     fontWeight:600,
@@ -64,31 +64,23 @@ const FetchingVideo: NextPageWithLayout = () => {
     const currentTime = video.currentTime;
   
     transcription.segments.forEach((segment: any) => {
-      
-      // Create a new array to store the groups of three words
+      // Group words in threes
       const wordGroups: any[] = [];
-    
-      // Iterate over the words in the segment and group them in threes
       for (let i = 0; i < segment.words.length; i += 3) {
-        const group = segment.words.slice(i, i + 3); // Get 3 words at a time
-    
-        // Calculate the start time of the group (first word's start) and end time (last word's end)
+        const group = segment.words.slice(i, i + 3);
         const groupStart = group[0].start;
         const groupEnd = group[group.length - 1].end;
-    
-        // Push the group along with its time to wordGroups
         wordGroups.push({ group, start: groupStart, end: groupEnd });
       }
-    
-      // Iterate over each word group
+  
       wordGroups.forEach((wordGroup: any) => {
         const { group, start, end } = wordGroup;
-    
+  
         if (currentTime >= start && currentTime <= end) {
-          // Map through each word in the group and apply the style
-          const highlightedWords = group.map((wordObj: any) => {
-            const isCurrentWord = currentTime >= wordObj.start && currentTime <= wordObj.end;
-    
+          // Map through each word in the group and apply the dynamic styling
+          const highlightedWords = group.map((wordObj: any, wordIndex: number) => {
+            const isCurrentWord = currentTime >= wordObj.start && 
+                                 (group[wordIndex + 1]?.start ? currentTime < group[wordIndex + 1].start : true);
             return `<span style="
                   background-color: ${isCurrentWord ? subtitleStyle.currentWordBg : 'transparent'};
                   color: ${isCurrentWord ? subtitleStyle.currentWordColor : subtitleStyle.color};
@@ -96,8 +88,8 @@ const FetchingVideo: NextPageWithLayout = () => {
                   display: inline-block;
                   transition: background-color 0.5s ease;
                 ">${wordObj.word}</span>`;
-          }).join(' '); // Combine the words into a single string with the style applied
-    
+          }).join(' ');
+  
           setCurrentWord((prevState) => ({
             ...prevState,
             [clip.id]: highlightedWords,
@@ -106,6 +98,7 @@ const FetchingVideo: NextPageWithLayout = () => {
       });
     });
   };
+  
   
 
   
