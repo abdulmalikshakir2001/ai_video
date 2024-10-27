@@ -59,9 +59,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           word.start = 0.00;
         if (index > 0 && segment.words[index - 1].end) {
           word.start = segment.words[index - 1].end ; // Use previous word's end time as start time
-        } else if (index === 0 && lastWordEndTime) {
-          word.start = lastWordEndTime ; // Use last word's end time from the previous segment
-        }
+        } 
       }
 
       // Handle missing end time
@@ -89,6 +87,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       speaker: segment.speaker,
     };
   });
+
+
 
   // Return or log the modified transcription structure
 
@@ -140,22 +140,44 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         }
         return word;
       });
+      
 
       // Handle missing start and end times
+      let  nextWordTransition  = 1;
       wordGroup.forEach((word: any, index: number) => {
         const wordRange = Math.round(((word.end-word.start)*1000));
+      
         // ------------------------------->
-        if ( index === 0 ){
-          const tag = `{${WHITE_COLOR}\\t(${0},${wordRange},${GREEN_COLOR})\\t(${wordRange},${wordRange},${WHITE_COLOR})}${word.word} {${WHITE_COLOR}\\t(${wordRange},${wordRange},${GREEN_COLOR})`;
+        if(index === 0 && wordGroup.length === 1 ){
+          
+
+
+          const tag = `{${WHITE_COLOR}\\t(${0},${5},${GREEN_COLOR})}${word.word}`;
+          command += tag;
+
+        }
+
+          else if ( index === 0 ){
+            const extraTimeBetweenWords =  ((wordGroup[index+1].start - wordGroup[index].end ) * 1000 ); 
+             nextWordTransition =  wordRange + extraTimeBetweenWords ;
+          const tag = `{${WHITE_COLOR}\\t(${0},${5},${GREEN_COLOR})\\t(${nextWordTransition},${nextWordTransition},${WHITE_COLOR})}${word.word} {${WHITE_COLOR}\\t(${nextWordTransition},${5},${GREEN_COLOR})`;
+          command += tag;
+        }
+
+        else if(index === 1 && wordGroup.length === 2){
+          const tag = `}${word.word}`
           command += tag;
         }
 
         else if(index === 1){
-          const tag = `\\t(${wordRange},${wordRange},${WHITE_COLOR})}${word.word} {${WHITE_COLOR}\\t(${wordRange},${wordRange},${GREEN_COLOR})`
+          nextWordTransition =  wordRange + nextWordTransition + ((wordGroup[index + 1].start - wordGroup[index].end) * 1000)
+          
+
+          const tag = `\\t(${nextWordTransition},${nextWordTransition},${WHITE_COLOR})}${word.word} {${WHITE_COLOR}\\t(${nextWordTransition},${5},${GREEN_COLOR})`
           command += tag;
         }
         else if(index === 2){
-          const tag = `\\t(${wordRange},${wordRange},${WHITE_COLOR})}${word.word}`
+          const tag = `}${word.word}`
           command += tag;
         }
         
@@ -163,6 +185,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
         // ------------------------------->
       });
+      nextWordTransition = 1
 
       // ------------------------------->
 
@@ -264,8 +287,8 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
 
         // Optional: clean up files after streaming
         fileStream.on('end', () => {
-          // fs.unlinkSync(outputVideoPath); // Remove the output video after download
-          // fs.unlinkSync(assFilePath); // Remove the subtitle file after download
+          fs.unlinkSync(outputVideoPath); // Remove the output video after download
+          fs.unlinkSync(assFilePath); // Remove the subtitle file after download
         });
       }
     );
