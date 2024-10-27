@@ -52,11 +52,17 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
   let lastWordEndTime = 0; // Variable to store the last word's end time across segments
 
-  const modifiedSegments = transcription.segments.map((segment: any) => {
+  const modifiedSegments = transcription.segments.map((segment: any,segIndex:number) => {
     const modifiedWords = segment.words.map((word: any, index: number) => {
       // Handle missing start time
       if (!word.start) {
           word.start = 0.00;
+
+          if (index === 0){
+            word.start = lastWordEndTime;
+          }
+          
+          
         if (index > 0 && segment.words[index - 1].end) {
           word.start = segment.words[index - 1].end ; // Use previous word's end time as start time
         } 
@@ -93,7 +99,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
   // Return or log the modified transcription structure
 
   // Iterate through each transcription segment
-  modifiedSegments.forEach((segment: any, segIndex: number) => {
+  modifiedSegments.forEach((segment: any) => {
     const words = segment.words;
 
     for (let i = 0; i < words.length; i += 3) {
