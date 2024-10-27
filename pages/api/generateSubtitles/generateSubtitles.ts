@@ -44,7 +44,7 @@ ScriptType: v4.00+
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,40,&H00FFFFFF,&H00000000,&H00000000,&H00000000,1,1,0,2,10,10,30,0
+Style: Default,Roboto,20,&H00FFFFFF,&H00000000,&H00000000,&H00000000,0,0,0,2,10,10,30,0
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -52,7 +52,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
   let lastWordEndTime = 0; // Variable to store the last word's end time across segments
 
-  const modifiedSegments = transcription.segments.map((segment: any,segIndex:number) => {
+  const modifiedSegments = transcription.segments.map((segment: any) => {
     const modifiedWords = segment.words.map((word: any, index: number) => {
       // Handle missing start time
       if (!word.start) {
@@ -112,53 +112,24 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       const WHITE_COLOR = '\\1c&HFFFFFF&';
       const GREEN_COLOR = '\\1c&H00FF00&';
 
-      const modifiedWords = words.map((word: any, index: number) => {
-        // Handle missing start time
-        if (!word.start) {
-          if (index > 0 && words[index - 1].end) {
-            word.start = words[index - 1].end; // Use previous word's end time as start time
-          }
-        }
-
-        // Handle missing end time
-        if (!word.end && index < words.length - 1) {
-          word.end = words[index + 1].start; // Set to next word's start or add default duration
-        }
-
-        return word;
-      });
+      
 
       
             
       let command = '';
       // ------------------------------->
 
-      const updatedWordGroup = wordGroup.map((word: any, index: number) => {
-        if (!word.start || !word.end) {
-          // Use previous word's end time as the current word's start time if missing
-          if (index > 0 && !word.start) {
-            word.start = wordGroup[index - 1].end || threeWordGroupStartTime;
-          }
-          // Use the next word's start time as the current word's end time if missing
-          if (index < wordGroup.length - 1 && !word.end) {
-            word.end = wordGroup[index + 1].start || threeWordGroupEndTime;
-          }
-        }
-        return word;
-      });
       
 
       // Handle missing start and end times
       let  nextWordTransition  = 1;
       wordGroup.forEach((word: any, index: number) => {
+        const modifiedWord = word.word.toUpperCase();
         const wordRange = Math.round(((word.end-word.start)*1000));
       
         // ------------------------------->
         if(index === 0 && wordGroup.length === 1 ){
-          
-
-
-          const tag = `{${WHITE_COLOR}\\t(${0},${5},${GREEN_COLOR})}${word.word}`;
+          const tag = `{${WHITE_COLOR}\\t(${0},${5},${GREEN_COLOR})}${modifiedWord}`;
           command += tag;
 
         }
@@ -166,12 +137,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           else if ( index === 0 ){
             const extraTimeBetweenWords =  ((wordGroup[index+1].start - wordGroup[index].end ) * 1000 ); 
              nextWordTransition =  wordRange + extraTimeBetweenWords ;
-          const tag = `{${WHITE_COLOR}\\t(${0},${5},${GREEN_COLOR})\\t(${nextWordTransition},${nextWordTransition},${WHITE_COLOR})}${word.word} {${WHITE_COLOR}\\t(${nextWordTransition},${5},${GREEN_COLOR})`;
+          const tag = `{${WHITE_COLOR}\\t(${0},${5},${GREEN_COLOR})\\t(${nextWordTransition},${nextWordTransition},${WHITE_COLOR})}${modifiedWord} {${WHITE_COLOR}\\t(${nextWordTransition},${5},${GREEN_COLOR})`;
           command += tag;
         }
 
         else if(index === 1 && wordGroup.length === 2){
-          const tag = `}${word.word}`
+          const tag = `}${modifiedWord}`
           command += tag;
         }
 
@@ -179,11 +150,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           nextWordTransition =  wordRange + nextWordTransition + ((wordGroup[index + 1].start - wordGroup[index].end) * 1000)
           
 
-          const tag = `\\t(${nextWordTransition},${nextWordTransition},${WHITE_COLOR})}${word.word} {${WHITE_COLOR}\\t(${nextWordTransition},${5},${GREEN_COLOR})`
+          const tag = `\\t(${nextWordTransition},${nextWordTransition},${WHITE_COLOR})}${modifiedWord} {${WHITE_COLOR}\\t(${nextWordTransition},${5},${GREEN_COLOR})`
           command += tag;
         }
         else if(index === 2){
-          const tag = `}${word.word}`
+          const tag = `}${modifiedWord}`
           command += tag;
         }
         
