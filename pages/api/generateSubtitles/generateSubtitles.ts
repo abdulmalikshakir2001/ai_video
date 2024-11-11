@@ -133,7 +133,6 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           command += tag;
 
         }
-
           else if ( index === 0 ){
             const extraTimeBetweenWords =  ((wordGroup[index+1].start - wordGroup[index].end ) * 1000 ); 
              nextWordTransition =  wordRange + extraTimeBetweenWords ;
@@ -157,9 +156,6 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           const tag = `}${modifiedWord}`
           command += tag;
         }
-        
-        
-
         // ------------------------------->
       });
       nextWordTransition = 1
