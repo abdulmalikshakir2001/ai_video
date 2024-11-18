@@ -72,7 +72,6 @@ const FetchingVideo: NextPageWithLayout = () => {
         const groupEnd = group[group.length - 1].end;
         wordGroups.push({ group, start: groupStart, end: groupEnd });
       }
-  
       wordGroups.forEach((wordGroup: any) => {
         const { group, start, end } = wordGroup;
   
@@ -239,9 +238,11 @@ const FetchingVideo: NextPageWithLayout = () => {
                       </div>
                     </h3>
                     <div className="flex gap-3 mt-3">
+                      <Link href={`/editor?moment=${clip.id}`} >
                       <button className="bg-blue-500 flex justify-center items-center gap-2 text-white px-4 py-2 rounded">
                         <IoFilmOutline /> {t('Edit')}
                       </button>
+                      </Link>
                       
 
                       <button
