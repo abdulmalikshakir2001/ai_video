@@ -14,6 +14,7 @@ const FetchingVideo: NextPageWithLayout = () => {
   const router = useRouter();
   const { id } = router.query;
   const [videoClips, setVideoClips] = useState<any[]>([]);
+  const [descriptions, setDescriptions] = useState<{ [key: string]: string }>({});
   const [currentWord, setCurrentWord] = useState<{ [key: string]: string }>({});
   const [isProcessing, setIsProcessing] = useState<{ [key: string]: boolean }>({})
   const [subtitleStyle] = useState({
@@ -53,6 +54,20 @@ const FetchingVideo: NextPageWithLayout = () => {
     try {
       const res = await axios.get(`/api/loadVideo/${clip.tranSrc}`);
       transcriptionCache.current[clip.id] = res.data;
+      const transcription = res.data;
+
+      // Combine all text from the transcription file
+      const combinedText = transcription.segments
+        .map((segment: any) => segment.text)
+        .join(' ');
+
+      // Update the descriptions state
+      setDescriptions((prevState) => ({
+        ...prevState,
+        [clip.id]: combinedText,
+      }));
+
+      
       return res.data;
     } catch (error) {
       console.error("Error fetching transcription:", error);
@@ -162,6 +177,57 @@ const FetchingVideo: NextPageWithLayout = () => {
       }));
     }
   };
+
+
+
+  // ================
+  useEffect(() => {
+    // Fetch video clips when the page loads
+    const fetchClips = async () => {
+      try {
+        const res = await axios.post('/api/videoClips/getAllClips', {
+          videoIdForClips: id,
+        });
+        const clips = res.data.data;
+        setVideoClips(clips);
+  
+        // Fetch descriptions for all clips
+        fetchDescriptions(clips);
+      } catch (error) {
+        console.error('Error fetching video clips:', error);
+      }
+    };
+  
+    if (id) {
+      fetchClips();
+    }
+  }, [id]);
+  
+  const fetchDescriptions = async (clips: any[]) => {
+    try {
+      const fetchPromises = clips.map(async (clip) => {
+        if (clip.tranSrc) {
+          const transcription = await fetchTranscription(clip); // Use existing fetchTranscription logic
+          if (transcription) {
+            const combinedText = transcription.segments
+              .map((segment: any) => segment.text)
+              .join(' ');
+  
+            setDescriptions((prevState) => ({
+              ...prevState,
+              [clip.id]: combinedText,
+            }));
+          }
+        }
+      });
+  
+      await Promise.all(fetchPromises);
+    } catch (error) {
+      console.error('Error fetching descriptions:', error);
+    }
+  };
+  
+  
   
   
 
@@ -170,26 +236,32 @@ const FetchingVideo: NextPageWithLayout = () => {
       <Head>
         <title>{`${t('moments')}`}</title>
       </Head>
-      <div>
-        <Link href={`/dashboard`} passHref>
-          <button className="bg-blue-500 text-white px-4 py-2 rounded">
-            {t('home')}
-          </button>
-        </Link>
+      <div className='mt-12 '>
 
-        <div className="flex flex-col gap-10 mt-7 w-full max-w-4xl">
+      <div className='mb-10'>
+  <div className='text-4xl font-cus_inter'>
+    {"Clips"}
+    <span className='text-2xl ml-1 align-super text-neutral-500'>{videoClips.length}</span>
+  </div>
+</div>
+
+        
+
+        <div className="flex flex-col gap-10  w-full ">
+          
           {videoClips.map((clip, index) => (
             clip.clipSrc ? (
               <div key={index} style={{ marginBottom: '20px' }}>
-                <div className="flex items-center gap-8 ml-52">
+                <div className='flex flex-col lg:flex-row gap-x-4'>
+
+                <div className="flex items-center gap-8 flex-1">
                   <div
                     style={{
                       borderRadius: '10px',
                       border: '2px solid #000000',
                       overflow: 'hidden',
                       background: 'black',
-                      width: '280px',
-                      height: '500px',
+                      
                     }}
                     className="relative"
                   >
@@ -199,7 +271,7 @@ const FetchingVideo: NextPageWithLayout = () => {
                       }}
                       src={`/api/loadVideo/${clip.clipSrc}`}
                       controls={true}
-                      className="bg-black w-[280px] h-[500px] object-cover"
+                      className="bg-black  object-cover"
                       onPlay={() => handleVideoUpdate(clip)}
                     />
                     {currentWord[clip.id] && (
@@ -228,25 +300,29 @@ const FetchingVideo: NextPageWithLayout = () => {
                     )}
                   </div>
 
-                  <div className="">
-                    <h3 className="text-center text-bold text-gray-500">
-                      <div className="flex justify-center items-center gap-2">
-                        <span className="text-2xl uppercase font-bold text-gray-600">
-                          {t('title')}
-                        </span>
-                        <span>{clip.title}</span>
-                      </div>
-                    </h3>
+                  
+                </div>
+
+                <div className='flex-1 flex flex-col justify-between'>
+
+                    <div>
+                  {/* <p className='font-bold font-cus_inter'>{"Title For the Video"}</p> */}
+                  <p className='mt-4 font-cus_inter text-neutral-500 trans_desc'>
+                    {descriptions[clip.id] || 'Loading...'}
+                  </p>
+                  </div>
+
+                  <div className="flex justify-end">
                     <div className="flex gap-3 mt-3">
                       <Link href={`/editor?moment=${clip.id}`} >
-                      <button className="bg-blue-500 flex justify-center items-center gap-2 text-white px-4 py-2 rounded">
+                      <button className=" flex justify-center items-center gap-2  px-4 py-2 rounded font-cus_inter">
                         <IoFilmOutline /> {t('Edit')}
                       </button>
                       </Link>
                       
 
                       <button
-  className="border-2 flex justify-center items-center gap-2 shadow-lg px-4 py-2 rounded"
+  className="flex justify-center items-center gap-2  px-4 py-2 rounded font-cus_inter"
   onClick={() => handleDownload(clip)}
   disabled={isProcessing[clip.id]} // Disable the button when processing
 >
@@ -259,7 +335,12 @@ const FetchingVideo: NextPageWithLayout = () => {
 
                     </div>
                   </div>
+                  
                 </div>
+
+                </div>
+
+
               </div>
             ) : null
           ))}
