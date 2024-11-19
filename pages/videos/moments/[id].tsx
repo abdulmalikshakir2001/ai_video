@@ -240,6 +240,7 @@ const FetchingVideo: NextPageWithLayout = () => {
 
       <div className='mb-10'>
   <div className='text-4xl font-cus_inter'>
+    
     {"Clips"}
     <span className='text-2xl ml-1 align-super text-neutral-500'>{videoClips.length}</span>
   </div>

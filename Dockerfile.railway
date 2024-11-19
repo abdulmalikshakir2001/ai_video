@@ -119,7 +119,7 @@ EXPOSE 4002
 RUN echo "Running db:setup..."
 RUN npx prisma generate
 RUN npm run build
-RUN npm run db:setup
+# RUN npm run db:setup
 
 # Start the Next.js app in development mode
 CMD ["npm", "run", "start"]

@@ -2,9 +2,7 @@
   "name": "saas-starter-kit",
   "version": "1.4.5",
   "private": true,
-  "prisma": {
-    
-  },
+  "prisma": {},
   "scripts": {
     "release": "git checkout release && git merge origin/main && release-it && git checkout main && git merge origin/release && git push origin main",
     "db:setup": "prisma generate && prisma db push && npm run seed",
@@ -78,7 +76,7 @@
     "react-google-recaptcha": "3.1.0",
     "react-hot-toast": "2.4.1",
     "react-i18next": "14.1.2",
-    "react-icons": "^5.2.1",
+    "react-icons": "^5.3.0",
     "react-player": "^2.16.0",
     "sharp": "0.33.4",
     "slack-notify": "2.0.7",

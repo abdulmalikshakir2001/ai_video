@@ -10,8 +10,15 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        cus_inter: ["Inter", 'serif' ], // Add Inter font as a default sans option
+        cus_inter: ["Inter", 'serif' ],
+        cus_monserrat: ["Montserrat", 'sans-serif' ],
       },
+      colors:{
+        dark_purple:'rgba(119, 17, 255, 0.14)', 
+        cus_light_grey:'rgba(4, 4, 4, 0.05)',
+        cus_dark_pink:'rgba(119, 17, 255, 1)',
+        cus_dark_gray:'rgba(63, 61, 86, 1)',
+      }
     },
   },
   daisyui: {

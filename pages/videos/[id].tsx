@@ -115,7 +115,7 @@ const FetchingVideo: NextPageWithLayout = ({
       </Head>
       <Home id={id} />
       <Container maxWidth="md" sx={{ mt: 4, backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h4" gutterBottom >
         {t("create-short")}
       </Typography>
       
