@@ -35,7 +35,7 @@ export default async function handler(
 // Utility function to create the .ass file content
 // Utility function to create the .ass file content
 
-function createAssFile(transcriptionData: any, subtitleStyle: any) {
+function createAssFile(transcriptionData: any) {
   const transcription = JSON.parse(transcriptionData);
   let assContent = `
 [Script Info]
@@ -210,7 +210,7 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
     const transcriptionData = fs.readFileSync(transcriptionPath, 'utf-8');
     console.log(subtitleStyle);
 
-    const assContent = createAssFile(transcriptionData, subtitleStyle);
+    const assContent = createAssFile(transcriptionData);
 
     // Save the .ass subtitle file temporarily
     //   const assFilePath = path.join(process.cwd(),'public', `ass.ass`);

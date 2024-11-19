@@ -1,1 +1,7 @@
-i comment the db:setup cmd in Docker.railway file.
+1) i comment the db:setup cmd in Docker.railway file.
+2)also remove "subtitleStyle"  parameter from createAssFile() in generateSubtitle.ts  becuase right now we are using static value and the subtitleStyle object will be pass from frontend.
+
+TODO:
+   1) make the createAssFile options dynamic (pass from front end)
+   2) youtube links video upload not working
+
