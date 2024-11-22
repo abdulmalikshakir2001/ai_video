@@ -18,6 +18,7 @@ module.exports = {
         cus_light_grey:'rgba(4, 4, 4, 0.05)',
         cus_dark_pink:'rgba(119, 17, 255, 1)',
         cus_dark_gray:'rgba(63, 61, 86, 1)',
+        cus_gray_shade:'#FAFAFA',
       }
     },
   },

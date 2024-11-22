@@ -1,546 +1,711 @@
-"use client"
-import { useEffect, useRef, useState } from "react";
-import AspectRatio from "@/components/videoEditor/AspectRatio";
-import VideoControls from "@/components/videoEditor/VideoControls";
-import { FaRegEdit } from "react-icons/fa";
-import { IoDocumentTextOutline } from "react-icons/io5";
-import SubtitleEditor from "@/components/videoEditor/SubtitleEditor";
-import Timeline from "@/components/videoEditor/TimeLine";
-import { ImFolderDownload } from "react-icons/im";
-import { useRouter } from "next/router";
-import axios from "axios";
+'use client';
+
+import { useRouter } from 'next/router';
+import axios from 'axios';
 import type { NextPageWithLayout } from 'types';
-import { useEditorContext } from "@/components/ContextApi/EditorContext";
-interface Subtitle {
-  startTime: number;
-  endTime: number;
-  text: string;
-}
-// font style setting
-interface FontStyle {
-  id: number;
-  fontSize: string;
-  color: string;
-  highlightColor: string;
-  fontFamily: string;
-  borderRadius: string;
-  padding: string;
-  fontWeight: number;
-  textShadow?: string; 
-  backgroundColor: string;
-  textAlign: "left" | "center" | "right"; 
-  textTransform: "none" | "capitalize" | "uppercase" | "lowercase"; 
-  letterSpacing: string;
-  xPosition: string; 
-  yPosition: string;
-  rotation: string; 
-  scale: string; 
-}
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { IoMdSettings } from 'react-icons/io';
+import SvgButton from '@/components/SvgButton';
+// import { CirclePicker } from 'react-color';
+import { SketchPicker } from 'react-color';
 
- const Editor :NextPageWithLayout = ( ) => {
-  const { values } = useEditorContext(); // Access context values
-  useEffect(()=>{
-    console.log(values)
-  },[values])
-
-  const [momentData, setMomentData] = useState<any>(null);
-  const [subtitlesUrl, setSubtitlesUrl] = useState<string>(
-    momentData && `/api/loadVideo/${momentData.srtSrc}`
-  );
-  useEffect(()=>{
-    console.log(subtitlesUrl)
-
-  },[subtitlesUrl])
-  
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [subtitlesContent, setSubtitlesContent] = useState<string>("");
-  const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
-  const [currentSubtitleIndex, setCurrentSubtitleIndex] = useState<
-    number | null
-  >(null);
-  const [selectedRatio, setSelectedRatio] = useState<string>("9:16");
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [tempSubtitleText, setTempSubtitleText] = useState<string>("");
-  const [showOnlyText, setShowOnlyText] = useState<boolean>(true);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [fontStyle, setFontStyle] = useState<FontStyle>({
-      id: 1,
-      fontSize: "16px",
-      color: "#FFFFFF",
-      highlightColor: '#0000FF',
-      fontFamily: "Montserrat",
-      borderRadius: '0.375rem',
-      padding: '0.5rem 0.5rem',
-      fontWeight: 800,
-      textAlign: 'center',
-      textTransform: 'none',
-      letterSpacing: '1.5',
-      xPosition: "10", // Default position
-      yPosition: "-30", // Default position
-      rotation: "-5", // Default rotation
-      scale: "1", // Default scale
-      textShadow:
-          `#1CFFDD 6px 0px 5px, 
-          #1CFFDD 5px 1px 5px, 
-          #1CFFDD 4px 3px 5px, 
-          #1CFFDD 3px 5px 5px, 
-          #1CFFDD 2px 6px 5px, 
-          #1CFFDD 1px 7px 5px, 
-          #1CFFDD 0px 7px 5px, 
-          #1CFFDD -1px 7px 5px, 
-          #1CFFDD -2px 6px 5px, 
-          #1CFFDD -3px 4px 5px, 
-          #1CFFDD -4px 3px 5px, 
-          #1CFFDD -5px 1px 5px, 
-          #1CFFDD -4px -1px 5px, 
-          #1CFFDD -3px -3px 5px, 
-          #1CFFDD -2px -5px 5px, 
-          #1CFFDD -1px -6px 5px, 
-          #1CFFDD 0px -7px 5px, 
-          #1CFFDD 1px -6px 5px, 
-          #1CFFDD 2px -4px 5px, 
-          #1CFFDD 3px -3px 5px, 
-          #1CFFDD 4px -1px 5px`,
-      backgroundColor: " ",
-  });
-  const [startTime, setStartTime] = useState<number>(0);
-  const [endTime, setEndTime] = useState<number>(0);
-  const [highlightedWordIndex, setHighlightedWordIndex] = useState<number | null>(null);
-
+const Editor: NextPageWithLayout = () => {
   const router = useRouter();
+  const [momentData, setMomentData] = useState<any>(null); // Use `any` for flexible typing
+  const [videoClips, setVideoClips] = useState<any[]>([]);
+  const [descriptions, setDescriptions] = useState<{ [key: string]: string }>(
+    {}
+  );
+  const [currentWord, setCurrentWord] = useState<{ [key: string]: string }>({});
+  const [horizontalPosition, setHorizontalPosition] =
+    useState<string>('justify-center');
+  const [verticalPosition, setVerticalPosition] = useState<string>('77%');
 
-  // useEffect(() => {
-  //   if (router.query.src) {
-  //     setVideoUrl(router.query.src as string); // Retrieve the `src` from the query
-  //   }
-  // }, [router.query.src]);
+  
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+  const transcriptionCache = useRef<{ [key: string]: any }>({});
+  // color picker
+  const [selectedColor, setSelectedColor] = useState<string>('#00FF00');
+  const [showPicker, setShowPicker] = useState(false);
+
+  const pickerRef = useRef<HTMLDivElement>(null);
+  // color picker
+  const [subtitleStyle] = useState({
+    fontSize: '20px',
+    color: 'white', // &H00FFFFFF
+    currentWordBg: '#E4B1F000', //'#E4B1F0' ,
+
+    left: 0,
+
+    currentWordColor: selectedColor, //'white',  // &H00FFFFFF
+    borderRadius: '10px',
+    fontFamily: 'Roboto',
+    fontWeight: 600,
+    letterSpacing: '',
+    textTransform: 'uppercase',
+  });
+
   useEffect(() => {
     if (router.query.moment) {
       const momentId = router.query.moment as string;
 
-      // Send a POST request to get the video clip data by moment id
+      // Function to fetch the video clip data
       const fetchClipData = async (momentId: string) => {
         try {
-          const response = await axios.post("/api/videoClips/getClip", { momentId });
-          const momentData = response.data;
-          setMomentData(momentData.data);
-          
+          const response = await axios.post('/api/videoClips/getClip', {
+            momentId,
+          });
+          const data = response.data;
+          setMomentData(data.data); // Set the fetched data in state
+          setVideoClips((prevClips) => {
+            const isDuplicate = prevClips.some(
+              (clip) => clip.id === data.data.id
+            );
+            if (!isDuplicate) {
+              return [...prevClips, data.data];
+            }
+            return prevClips;
+          });
+
+          console.log('Moment data:', data);
         } catch (error) {
-          console.error("Failed to fetch moment data:", error);
+          console.error('Failed to fetch moment data:', error);
         }
       };
-      fetchClipData(momentId); // Call the function when the moment query param is present
+
+      fetchClipData(momentId); // Fetch data when the query parameter exists
     }
   }, [router.query.moment]);
-  useEffect(()=>{
-    setSubtitlesUrl(momentData && `/api/loadVideo/${momentData.srtSrc}`)
-  },[momentData,subtitlesUrl])
-  const handleCutVideo = (start: number, end: number) => {
-    setStartTime(start);
-    setEndTime(end);
-  };
-  const handleFontStyleChange = (newFontStyle: FontStyle) => {
-    setFontStyle(newFontStyle);
-  };
-  useEffect(() => {
-    const fetchAndParseSubtitles = async () => {
-      try {
-        const response = await fetch(subtitlesUrl);
-        if (!response.ok) throw new Error("Failed to fetch subtitles");
-        const text = await response.text();
-        setSubtitlesContent(text);
-        parseSrt(text);
-      } catch (error) {
-        console.error("Failed to fetch and parse subtitles:", error);
-      }
-    };
-    fetchAndParseSubtitles();
-  }, [subtitlesUrl ]);
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    console.log(videoClips);
+  }, [momentData, videoClips]);
 
-    const handleTimeUpdate = () => {
-      const currentTime = video.currentTime;
-      const foundIndex = subtitles.findIndex(
-        (subtitle, i) =>
-          currentTime >= subtitle.startTime &&
-          (i + 1 >= subtitles.length ||
-            currentTime < subtitles[i + 1].startTime)
-      );
-      setCurrentSubtitleIndex(foundIndex !== -1 ? foundIndex : null);
-    };
-
-    video.addEventListener("timeupdate", handleTimeUpdate);
-    return () => video.removeEventListener("timeupdate", handleTimeUpdate);
-  }, [subtitles]);
-
-  const parseSrt = (srtContent: string) => {
-    const subtitleEntries = srtContent.trim().split("\n\n");
-    const parsedSubtitles = subtitleEntries
-      .map((entry) => {
-        const lines = entry.split("\n");
-        if (lines.length < 3) return null;
-
-        const [startTime, endTime] = lines[1].split(" --> ").map(parseTime);
-        const text = lines.slice(2).join(" ");
-        return { startTime, endTime, text };
-      })
-      .filter(Boolean) as Subtitle[];
-
-    setSubtitles(parsedSubtitles);
-  };
-
-  const parseTime = (timeString: string): number => {
-    const [hours, minutes, seconds] = timeString
-      .split(":")
-      .map((part, index) =>
-        index === 2 ? parseFloat(part.replace(",", ".")) : parseFloat(part)
-      );
-    return hours * 3600 + minutes * 60 + seconds;
-  };
-
-  const formatTime = (time: number): string => {
-    const hours = Math.floor(time / 3600);
-    const minutes = Math.floor((time % 3600) / 60);
-    const seconds = Math.floor(time % 60);
-    const milliseconds = Math.round((time % 1) * 1000);
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-      2,
-      "0"
-    )}:${String(seconds).padStart(2, "0")},${String(milliseconds).padStart(
-      3,
-      "0"
-    )}`;
-  };
-
-  // Function to format time as minutes and seconds for display
-  const formatDisplayTime = (time: number): string => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${String(seconds).padStart(2, "0")}`;
-  };
-
-  const handleRatioChange = (ratio: string) => {
-    setSelectedRatio(ratio);
-  };
-
-  const getAspectRatioStyle = () => {
-    switch (selectedRatio) {
-      case "9:16":
-        return "w-[220px] h-[400px] bg-black object-cover";
-      case "1:1":
-        return "w-[300px] h-[300px] bg-black object-cover";
-      default:
-        return "w-[400px] h-[220px] bg-black";
+  const fetchTranscription = async (clip: any) => {
+    if (transcriptionCache.current[clip.id]) {
+      return transcriptionCache.current[clip.id];
     }
-  };
-
-  // api function ========
-  const handleProcessVideo = async () => {
-    setIsProcessing(true);
-    
 
     try {
-      const response = await fetch("/api/videoEditor/processVideo", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-           videoUrl :`${momentData.clipSrc}`,
-          subtitlesUrl:`${momentData.srtSrc}`,
-          subtitlesContent,
-          selectedRatio,
-          fontStyle,
-          startTime,
-          endTime
-        }),
+      const res = await axios.get(`/api/loadVideo/${clip.tranSrc}`);
+      transcriptionCache.current[clip.id] = res.data;
+      const transcription = res.data;
+
+      // Combine all text from the transcription file
+      const combinedText = transcription.segments
+        .map((segment: any) => segment.text)
+        .join(' ');
+
+      // Update the descriptions state
+      setDescriptions((prevState) => ({
+        ...prevState,
+        [clip.id]: combinedText,
+      }));
+
+      return res.data;
+    } catch (error) {
+      console.error('Error fetching transcription:', error);
+      return null;
+    }
+  };
+
+  const checkWordTiming = (
+    clip: any,
+    video: HTMLVideoElement,
+    transcription: any
+  ) => {
+    const currentTime = video.currentTime;
+
+    transcription.segments.forEach((segment: any) => {
+      // Group words in threes
+      const wordGroups: any[] = [];
+      for (let i = 0; i < segment.words.length; i += 3) {
+        const group = segment.words.slice(i, i + 3);
+        const groupStart = group[0].start;
+        const groupEnd = group[group.length - 1].end;
+        wordGroups.push({ group, start: groupStart, end: groupEnd });
+      }
+      wordGroups.forEach((wordGroup: any) => {
+        const { group, start, end } = wordGroup;
+
+        if (currentTime >= start && currentTime <= end) {
+          // Map through each word in the group and apply the dynamic styling
+          const highlightedWords = group
+            .map((wordObj: any, wordIndex: number) => {
+              const isCurrentWord =
+                currentTime >= wordObj.start &&
+                (group[wordIndex + 1]?.start
+                  ? currentTime < group[wordIndex + 1].start
+                  : true);
+              return `<span style="
+                  background-color: ${isCurrentWord ? subtitleStyle.currentWordBg : 'transparent'};
+                  color: ${isCurrentWord ? selectedColor : subtitleStyle.color};
+                  border-radius: ${isCurrentWord ? subtitleStyle.borderRadius : '0'};
+                  display: inline-block;
+                  transition: background-color 0.5s ease;
+                ">${wordObj.word}</span>`;
+            })
+            .join(' ');
+
+          setCurrentWord((prevState) => ({
+            ...prevState,
+            [clip.id]: highlightedWords,
+          }));
+        }
+      });
+    });
+  };
+
+
+
+  // const checkWordTiming = useCallback(
+  //   (clip: any, video: HTMLVideoElement, transcription: any) => {
+  //     const currentTime = video.currentTime;
+  
+  //     transcription.segments.forEach((segment: any) => {
+  //       // Group words in threes
+  //       const wordGroups: any[] = [];
+  //       for (let i = 0; i < segment.words.length; i += 3) {
+  //         const group = segment.words.slice(i, i + 3);
+  //         const groupStart = group[0].start;
+  //         const groupEnd = group[group.length - 1].end;
+  //         wordGroups.push({ group, start: groupStart, end: groupEnd });
+  //       }
+  //       wordGroups.forEach((wordGroup: any) => {
+  //         const { group, start, end } = wordGroup;
+  
+  //         if (currentTime >= start && currentTime <= end) {
+  //           // Map through each word in the group and apply the dynamic styling
+  //           const highlightedWords = group
+  //             .map((wordObj: any, wordIndex: number) => {
+  //               const isCurrentWord =
+  //                 currentTime >= wordObj.start &&
+  //                 (group[wordIndex + 1]?.start
+  //                   ? currentTime < group[wordIndex + 1].start
+  //                   : true);
+  //               return `<span style="background-color: ${
+  //                 isCurrentWord ? subtitleStyle.currentWordBg : 'transparent'
+  //               };
+  //                 color: ${
+  //                   isCurrentWord ? selectedColor : subtitleStyle.color
+  //                 };
+  //                 border-radius: ${
+  //                   isCurrentWord ? subtitleStyle.borderRadius : '0'
+  //                 };
+  //                 display: inline-block;
+  //                 transition: background-color 0.5s ease;
+  //               ">${wordObj.word}</span>`;
+  //             })
+  //             .join(' ');
+  
+  //           setCurrentWord((prevState) => ({
+  //             ...prevState,
+  //             [clip.id]: highlightedWords,
+  //           }));
+  //         }
+  //       });
+  //     });
+  //   },
+  //   [selectedColor, subtitleStyle.borderRadius, subtitleStyle.color, subtitleStyle.currentWordBg] // Add selectedColor as a dependency
+  // );
+  
+
+
+  const handleVideoUpdate = (clip: any) => {
+    if (!videoRefs.current[clip.id]) return;
+
+    const video = videoRefs.current[clip.id];
+
+    fetchTranscription(clip).then((transcription) => {
+      if (!transcription) return;
+
+      const update = () => {
+        if (video) {
+          checkWordTiming(clip, video, transcription);
+          requestAnimationFrame(update);
+        }
+      };
+      update(); // Start the loop
+    });
+  };
+
+  const fetchDescriptions = useCallback(async (clips: any[]) => {
+    try {
+      const fetchPromises = clips.map(async (clip) => {
+        if (clip.tranSrc) {
+          const transcription = await fetchTranscription(clip); // Use existing fetchTranscription logic
+          if (transcription) {
+            const combinedText = transcription.segments
+              .map((segment: any) => segment.text)
+              .join(' ');
+
+            setDescriptions((prevState) => ({
+              ...prevState,
+              [clip.id]: combinedText,
+            }));
+          }
+        }
       });
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-
-
-        // Trigger automatic download
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'processed_video.mp4';
-        a.click();
-        // URL.revokeObjectURL(url);
-      } else {
-        console.error("Failed to process video");
-      }
+      await Promise.all(fetchPromises);
     } catch (error) {
-      console.error("Error processing video:", error);
-    } finally {
-      setIsProcessing(false);
+      console.error('Error fetching descriptions:', error);
     }
-  };
+  }, []);
 
-  // subtitles text edit
-  const handleSubtitleClick = (index: number) => {
-    setEditingIndex(index);
-    setTempSubtitleText(subtitles[index].text);
-  };
-
-  const handleSubtitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTempSubtitleText(event.target.value);
-  };
-
-  const handleSaveSubtitle = () => {
-    if (editingIndex !== null) {
-      const updatedSubtitles = [...subtitles];
-      updatedSubtitles[editingIndex] = {
-        ...updatedSubtitles[editingIndex],
-        text: tempSubtitleText,
-      };
-      setSubtitles(updatedSubtitles);
-      setSubtitlesContent(
-        updatedSubtitles
-          .map(
-            (sub, index) =>
-              `${index + 1}\n${formatTime(sub.startTime)} --> ${formatTime(
-                sub.endTime
-              )}\n${sub.text}`
-          )
-          .join("\n\n")
-      );
-      setEditingIndex(null);
-    }
-  };
-
-  const toggleView = (onlyText: boolean) => {
-    setShowOnlyText(onlyText);
-  };
-
-  // subtitles spoken word highlighting
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    const handleTimeUpdate = () => {
-      const currentTime = video.currentTime;
-      const foundIndex = subtitles.findIndex(
-        (subtitle, i) =>
-          currentTime >= subtitle.startTime &&
-          (i + 1 >= subtitles.length || currentTime < subtitles[i + 1].startTime)
+    fetchDescriptions(videoClips);
+  }, [videoClips, fetchDescriptions]);
+  const [activeTab, setActiveTab] = useState('tab1');
+
+  // them start
+  const text = 'Customize the caption design ';
+  const words = text.split(' '); // Split text into words
+  const [activeWordIndex, setActiveWordIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (!isHovered) return; // Start animation only on hover
+
+    const interval = setInterval(() => {
+      setActiveWordIndex((prevIndex) =>
+        prevIndex === words.length - 1 ? 0 : prevIndex + 1
       );
-      setCurrentSubtitleIndex(foundIndex !== -1 ? foundIndex : null);
+    }, 500); // Adjust animation speed
 
-      if (foundIndex !== -1) {
-        const subtitle = subtitles[foundIndex];
-        const words = subtitle.text.split(" ");
-        let cumulativeTime = subtitle.startTime;
-        const wordDurations = words.map(() => {
-          const duration = (subtitle.endTime - subtitle.startTime) / words.length;
-          cumulativeTime += duration;
-          return cumulativeTime;
-        });
+    return () => clearInterval(interval); // Cleanup when hover stops
+  }, [isHovered, words.length]);
 
-        const wordIndex = wordDurations.findIndex(
-          (endTime, i) =>
-            currentTime >= (i === 0 ? subtitle.startTime : wordDurations[i - 1]) &&
-            currentTime < endTime
-        );
-        setHighlightedWordIndex(wordIndex !== -1 ? wordIndex : null);
-      } else {
-        setHighlightedWordIndex(null);
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setActiveWordIndex(0); // Reset to default state (first word green)
+  };
+  // theme end
+
+  const svgButtClicked = (propertyName: string) => {
+    setHorizontalPosition(propertyName);
+  };
+
+  const verticalPositionFn = (percentage: string) => {
+    setVerticalPosition(percentage);
+  };
+
+  // color picker
+  const handleBoxClick = () => {
+    setShowPicker(!showPicker);
+  };
+
+  // Hide the color picker when clicking outside of it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(event.target as Node)
+      ) {
+        setShowPicker(false);
       }
     };
 
-    video.addEventListener("timeupdate", handleTimeUpdate);
-    return () => video.removeEventListener("timeupdate", handleTimeUpdate);
-  }, [subtitles]);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-  const renderSubtitleText = () => {
-    if (currentSubtitleIndex === null) return null;
-
-    const subtitle = subtitles[currentSubtitleIndex];
-    const words = subtitle.text.split(" ");
-
-    let textShadow;
-    if(fontStyle.id === 1 || fontStyle.id === 2){
-      textShadow = ' '
-    } else {
-      textShadow = fontStyle.textShadow
-    }
-
-    const getTextStyles = (index: number) => {
-      if (fontStyle.id === 1 || fontStyle.id === 2) {
-        return {
-          color: index === highlightedWordIndex ? fontStyle.highlightColor : fontStyle.color,
-          textShadow: index === highlightedWordIndex ? fontStyle.textShadow : " ", // Apply textShadow if available
-          // scale(1.1)
-          fontSize: index === highlightedWordIndex ? '24px' : ' ',
-        };
-      } else {
-        return {
-          color: index === highlightedWordIndex ? fontStyle.highlightColor : fontStyle.color,
-          fontSize: index === highlightedWordIndex ? '24px' : '',
-          transition: 'transform 0.3s ease',
-          // textShadow: "none", // No textShadow for other fonts
-        };
-      }
-    }
+  const handleColorChange = (color: any) => {
+    setSelectedColor(color.hex);
     
-    return (
-      <p 
-      className="select-none overflow-hidden"
-                  style={{ 
-                    fontSize: `${fontStyle.fontSize}`, 
-                    fontFamily: `${fontStyle.fontFamily}`, 
-                    color: `${fontStyle.color} || text-white`,  
-                    fontWeight: `${fontStyle.fontWeight}`, 
-                    letterSpacing: `${fontStyle.letterSpacing}`, 
-                    textAlign: `${fontStyle.textAlign}`, 
-                    textTransform: `${fontStyle.textTransform}`, 
-                    textShadow: `${textShadow}`,
-                    padding: `${fontStyle.padding}`,
-                   }}
-      >
-        {words.map((word, index) => (
-          <span
-            key={index}
-            style={getTextStyles(index)}
-          >
-            {word}{" "}
-          </span>
-        ))}
-      </p>
-    );
   };
 
+  useEffect(()=>{
+    videoClips.length>0 && handleVideoUpdate(videoClips[0]);
+  },[selectedColor])
+  
+
+  // color picker
 
   return (
     <>
-      <div className="flex justify-between items-center shadow-md gap-5 border-b-2 bg-neutral-100  w-full px-4">
-        <h1 className="w-full text-lg font-bold p-4">
-          {"Video Title"}
-        </h1>
-        <AspectRatio
-          onRatioChange={handleRatioChange}
-          selectedRatio={selectedRatio}
-        />
-        <button
-          onClick={handleProcessVideo}
-          disabled={isProcessing}
-          className="flex items-center justify-center gap-3 bg-blue-500 hover:bg-blue-600 text-neutral-50 rounded-lg px-3 py-2 shadow-lg"
-        >
-          <ImFolderDownload />
-          {isProcessing ? "Processing..." : "Export"}
-        </button>
-      </div>
+      <div className="flex">
+        <div className="w-2/3">
+          <div>{'Aspect Ratio'}</div>
+          <div>
+            {videoClips.map((clip, index) =>
+              clip.clipSrc ? (
+                <div key={index} style={{ marginBottom: '20px' }}>
+                  <div className="flex flex-col">
+                    <div className="">
+                      <div
+                        style={{
+                          border: '2px solid #000000',
+                          overflow: 'hidden',
+                          background: 'black',
+                        }}
+                        className="relative flex"
+                      >
+                        <video
+                          ref={(el) => {
+                            videoRefs.current[clip.id] = el;
+                          }}
+                          src={`/api/loadVideo/${clip.clipSrc}`}
+                          controls={true}
+                          className="bg-black  object-cover flex-1 "
+                          onPlay={() => handleVideoUpdate(clip)}
+                        />
 
-      <div className="flex items-center justify-between w-full gap-8">
-        <div className="w-[400px] h-[400px] overflow-y-auto border-2">
-          <div className="flex gap-4 border-b-2">
-            <button
-              onClick={() => toggleView(true)}
-              className={`px-4 py-2 text-lg ${showOnlyText
-                ? "border-b-2 border-gray-900 text-black"
-                : "border-none text-gray-700"
-                } `}
-            >
-              <IoDocumentTextOutline />
-            </button>
-            <button
-              onClick={() => toggleView(false)}
-              className={`px-4 py-2 text-lg flex gap-2 items-center ${!showOnlyText
-                ? "border-b-2 border-gray-900 text-black"
-                : "border-none text-gray-700"
-                } `}
-            >
-              <FaRegEdit /> {"Edit"}
-            </button>
-          </div>
+                        {currentWord[clip.id] && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              fontSize: subtitleStyle.fontSize,
+                              color: subtitleStyle.color,
+                              top: verticalPosition,
+                              left: subtitleStyle.left,
+                              width: '100%',
+                              padding: '5px',
+                              borderRadius: '5px',
+                              textAlign: 'center',
+                              whiteSpace: 'pre-wrap',
+                              fontFamily: subtitleStyle.fontFamily,
+                              fontWeight: subtitleStyle.fontWeight,
+                              letterSpacing: subtitleStyle.letterSpacing,
+                              textTransform: subtitleStyle.textTransform as any,
+                            }}
+                            className={`flex ${horizontalPosition}`}
+                          >
+                            {/* justify start,center,end for alignment */}
+                            <div
+                              className="flex gap-x-3 "
+                              dangerouslySetInnerHTML={{
+                                __html: currentWord[clip.id],
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-          {/* Show either only subtitles or full view based on toggle */}
-          {showOnlyText ? (
-            <p className="px-2 py-1">
-              {subtitles.map((subtitle) => subtitle.text).join(" ")}
-            </p>
-          ) : (
-            subtitles.map((subtitle, index) => (
-              <div key={index} className="flex mt-1 gap-2 items-center">
-                <p className="text-sm text-gray-500">
-                  {formatDisplayTime(subtitle.startTime)}
-                </p>
-                {editingIndex === index ? (
-                  <input
-                    type="text"
-                    value={tempSubtitleText}
-                    onChange={handleSubtitleChange}
-                    onBlur={handleSaveSubtitle}
-                    className="w-full px-2 py-1 border outline-none focus:outline-none border-gray-300 rounded-lg"
-                  />
-                ) : (
-                  <p
-                    onClick={() => handleSubtitleClick(index)}
-                    className={`cursor-pointer w-full px-2 py-1 ${currentSubtitleIndex === index ? "text-blue-500" : ""
-                      } border border-white rounded-lg hover:border-gray-500`}
-                  >
-                    {subtitle.text}
-                  </p>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      {/* video preview tag with subtitles  */}
-        <div className="w-[400px] h-[400px] flex items-center justify-center mb-5 mt-5 relative">
-          <div className={`${getAspectRatioStyle()} relative overflow-hidden`}>
-            <video
-              src={momentData &&  `/api/loadVideo/${momentData.clipSrc}`}
-              ref={videoRef}
-              className={`${getAspectRatioStyle()}`}
-            />
-            
-            {currentSubtitleIndex !== null && (
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "0px",
-                  right: '10px',
-                  letterSpacing: `${fontStyle.letterSpacing}px`,
-                  transform: `translateX(${fontStyle.xPosition}px) translateY(${fontStyle.yPosition}px) rotate(${fontStyle.rotation}deg) scale(${fontStyle.scale})`,
-                }}
-                className="w-full flex items-center justify-center overflow-hidden"
-              >
-                {/* subtitles text */}
-                {currentSubtitleIndex !== null && renderSubtitleText()}
-              </div>
+                    <div className="description section">
+                      <div className="p-8">
+                        <h3 className="font-cus_inter font-semibold text-2xl">
+                          {'Clip text'}
+                        </h3>
+
+                        <p className="mt-4 font-cus_inter text-neutral-500 trans_desc">
+                          {descriptions[clip.id] || 'Loading...'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null
             )}
           </div>
         </div>
+        <div className="w-1/3">
+          <div className="w-full max-w-md mx-auto mt-8">
+            {/* Tabs Header */}
+            <div className="flex  h-16 bg-cus_light_grey justify-center items-center">
+              <div className="flex gap-x-4">
+                <div
+                  className={`flex justify-center items-center rounded  px-6 shadow ${
+                    activeTab === 'tab1'
+                      ? 'bg-white text-black'
+                      : ' text-gray-700'
+                  }`}
+                >
+                  <div>
+                    <IoMdSettings />
+                  </div>
+                  <div>
+                    <button
+                      className={`py-1 px-3  ${
+                        activeTab === 'tab1'
+                          ? 'bg-white text-black'
+                          : ' text-gray-700'
+                      }`}
+                      onClick={() => setActiveTab('tab1')}
+                    >
+                      {'Themes'}
+                    </button>
+                  </div>
+                </div>
 
-        <SubtitleEditor fontStyle={fontStyle} onFontStyleChange={handleFontStyleChange} />
+                <div
+                  className={`flex justify-center items-center rounded px-6 shadow ${
+                    activeTab === 'tab2'
+                      ? 'bg-white text-black'
+                      : ' text-gray-700'
+                  }`}
+                >
+                  <div>
+                    <IoMdSettings />
+                  </div>
+                  <div>
+                    <button
+                      className={`py-1 px-3 rounded ${
+                        activeTab === 'tab2'
+                          ? 'bg-white text-black'
+                          : ' text-gray-700'
+                      }`}
+                      onClick={() => setActiveTab('tab2')}
+                    >
+                      {'Settings'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      </div>
+            {/* Tabs Content */}
+            <div className="mt-4">
+              {activeTab === 'tab1' && (
+                <div className="ps-4 bg-cus_gray_shade rounded ">
+                  <p>
+                    <div
+                      className="flex justify-center items-center  bg-black h-14 rounded-md font-cus_inter italic font-bold p-4"
+                      onMouseEnter={handleMouseEnter}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      <div className="text-white text-2xl font-semibold">
+                        {words.map((word, index) => (
+                          <span
+                            key={index}
+                            className={`transition-colors duration-300 ${
+                              index === activeWordIndex
+                                ? 'text-green-500'
+                                : 'text-white'
+                            }`}
+                          >
+                            {word}
+                            {index < words.length - 1 && ' '}{' '}
+                            {/* Add spaces between words */}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </p>
+                </div>
+              )}
+              {activeTab === 'tab2' && (
+                <div className="p-4 bg-cus_gray_shade rounded ">
+                  <div className=" space-y-2">
+                    <div className="font-medium pb-0.5 text-sm font-cus_inter">
+                      {'Colors'}
+                    </div>
 
-      <div className="w-full">
-        <VideoControls videoRef={videoRef} />
-      </div>
-      <div className="w-full">
-        <Timeline 
-        videoUrl={momentData && `/api/loadVideo/${momentData.clipSrc}`} 
-        videoRef={videoRef} 
-        onCutVideo={handleCutVideo} 
-        subtitles={subtitles}
-          />
-      </div>
-      <div>
-      {isProcessing && <p>{"Processing your video, please wait..."}</p>}
-      
+                    <div className="flex justify-between items-center">
+                      <div className="text-xs  text-neutral-600">
+                        {'Highlight color'}
+                      </div>
+
+                      <div className="flex gap-x-4">
+                        <div className="">
+                          <div
+                            style={{
+                              position: 'relative',
+                              display: 'inline-block',
+                            }}
+                          >
+                            {/* Color Box */}
+                            <div
+                              onClick={handleBoxClick}
+                              style={{
+                                backgroundColor: selectedColor,
+                              }}
+                              className="w-6 h-6 cursor-pointer border border-gray-300 rounded"
+                            ></div>
+
+                            {/* SketchPicker */}
+                            {showPicker && (
+                              <div
+                                ref={pickerRef}
+                                // style={{ position: 'absolute', zIndex: 100, marginTop: '10px' }}
+                                className="absolute z-[100] mt-2 right-0 "
+                              >
+                                <SketchPicker
+                                  color={selectedColor}
+                                  onChange={handleColorChange}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="font-medium pb-0.5 text-sm font-cus_inter">
+                      {'Position'}
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <div className="text-xs  text-neutral-600">
+                        {'Text  Position'}
+                      </div>
+
+                      <div className="flex gap-x-4">
+                        <div className="">
+                          <SvgButton
+                            svgIcon={
+                              <svg
+                                viewBox="0 0 24 24"
+                                height="12"
+                                width="12"
+                                aria-hidden="true"
+                                focusable="false"
+                                fill="currentColor"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="StyledIconBase-sc-ea9ulj-0 ebjPRL text-neutral-500"
+                              >
+                                <path d="M8 11h3v10h2V11h3l-4-4-4 4zM4 3v2h16V3H4z"></path>
+                              </svg>
+                            }
+                            onClick={() => {
+                              verticalPositionFn('0%');
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <SvgButton
+                            onClick={() => {
+                              verticalPositionFn('40%');
+                            }}
+                            svgIcon={
+                              <svg
+                                viewBox="0 0 24 24"
+                                height="12"
+                                width="12"
+                                aria-hidden="true"
+                                focusable="false"
+                                fill="currentColor"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="StyledIconBase-sc-ea9ulj-0 ebjPRL text-neutral-500"
+                              >
+                                <path d="M8 19h3v4h2v-4h3l-4-4-4 4zm8-14h-3V1h-2v4H8l4 4 4-4zM4 11v2h16v-2H4z"></path>
+                              </svg>
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <SvgButton
+                            onClick={() => {
+                              verticalPositionFn('77%');
+                            }}
+                            svgIcon={
+                              <svg
+                                viewBox="0 0 24 24"
+                                height="12"
+                                width="12"
+                                aria-hidden="true"
+                                focusable="false"
+                                fill="currentColor"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="StyledIconBase-sc-ea9ulj-0 ebjPRL text-neutral-500"
+                              >
+                                <path d="M16 13h-3V3h-2v10H8l4 4 4-4zM4 19v2h16v-2H4z"></path>
+                              </svg>
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <div className="text-xs  text-neutral-600">
+                        {'Alignment'}
+                      </div>
+
+                      <div className="flex gap-x-4">
+                        <div className="">
+                          <SvgButton
+                            svgIcon={
+                              <svg
+                                viewBox="0 0 16 16"
+                                height="12"
+                                width="12"
+                                aria-hidden="true"
+                                focusable="false"
+                                fill="currentColor"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="StyledIconBase-sc-ea9ulj-0 ebjPRL text-neutral-500"
+                              >
+                                <path
+                                  fill-rule="evenodd"
+                                  d="M1.5 1a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-1 0v-13a.5.5 0 0 1 .5-.5z"
+                                ></path>
+                                <path d="M3 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z"></path>
+                              </svg>
+                            }
+                            onClick={() => {
+                              svgButtClicked('justify-start');
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <SvgButton
+                            onClick={() => {
+                              svgButtClicked('justify-center');
+                            }}
+                            svgIcon={
+                              <svg
+                                viewBox="0 0 16 16"
+                                height="12"
+                                width="12"
+                                aria-hidden="true"
+                                focusable="false"
+                                fill="currentColor"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="StyledIconBase-sc-ea9ulj-0 ebjPRL text-neutral-500"
+                              >
+                                <path d="M8 1a.5.5 0 0 1 .5.5V6h-1V1.5A.5.5 0 0 1 8 1zm0 14a.5.5 0 0 1-.5-.5V10h1v4.5a.5.5 0 0 1-.5.5zM2 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7z"></path>
+                              </svg>
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <SvgButton
+                            onClick={() => {
+                              svgButtClicked('justify-end');
+                            }}
+                            svgIcon={
+                              <svg
+                                viewBox="0 0 16 16"
+                                height="12"
+                                width="12"
+                                aria-hidden="true"
+                                focusable="false"
+                                fill="currentColor"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="StyledIconBase-sc-ea9ulj-0 ebjPRL text-neutral-500"
+                              >
+                                <path
+                                  fill-rule="evenodd"
+                                  d="M14.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 1 0v-13a.5.5 0 0 0-.5-.5z"
+                                ></path>
+                                <path d="M13 7a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"></path>
+                              </svg>
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
-}
-
-
-
-
+};
 
 export default Editor;
-

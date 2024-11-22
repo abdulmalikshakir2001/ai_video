@@ -128,3 +128,17 @@ a {
 }
 /* index page style */
 
+/* .m_50_per {
+  margin-left: 50%;
+  
+} */
+
+
+
+
+.element {
+  position: relative; /* or absolute */
+  margin-left: calc(66% - 33%); /* Moves backward by 50% of 66% */
+}
+
+
