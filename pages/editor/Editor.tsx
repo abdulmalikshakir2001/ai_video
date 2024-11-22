@@ -8,6 +8,7 @@ import { IoMdSettings } from 'react-icons/io';
 import SvgButton from '@/components/SvgButton';
 // import { CirclePicker } from 'react-color';
 import { SketchPicker } from 'react-color';
+import { Button } from 'react-daisyui';
 
 const Editor: NextPageWithLayout = () => {
   const router = useRouter();
@@ -21,18 +22,22 @@ const Editor: NextPageWithLayout = () => {
     useState<string>('justify-center');
   const [verticalPosition, setVerticalPosition] = useState<string>('77%');
 
-  
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const transcriptionCache = useRef<{ [key: string]: any }>({});
   // color picker
   const [selectedColor, setSelectedColor] = useState<string>('#00FF00');
   const [showPicker, setShowPicker] = useState(false);
-
   const pickerRef = useRef<HTMLDivElement>(null);
   // color picker
+  // text color  picker
+  const [selectedTextColor, setSelectedTextColor] = useState<string>('#FFFFFF');
+  const [showTextPicker, setShowTextPicker] = useState(false);
+  const pickerTextRef = useRef<HTMLDivElement>(null);
+  // text color picker
+
   const [subtitleStyle] = useState({
     fontSize: '20px',
-    color: 'white', // &H00FFFFFF
+    color: selectedTextColor, // &H00FFFFFF
     currentWordBg: '#E4B1F000', //'#E4B1F0' ,
 
     left: 0,
@@ -139,7 +144,7 @@ const Editor: NextPageWithLayout = () => {
                   : true);
               return `<span style="
                   background-color: ${isCurrentWord ? subtitleStyle.currentWordBg : 'transparent'};
-                  color: ${isCurrentWord ? selectedColor : subtitleStyle.color};
+                  color: ${isCurrentWord ? selectedColor : selectedTextColor};
                   border-radius: ${isCurrentWord ? subtitleStyle.borderRadius : '0'};
                   display: inline-block;
                   transition: background-color 0.5s ease;
@@ -155,61 +160,6 @@ const Editor: NextPageWithLayout = () => {
       });
     });
   };
-
-
-
-  // const checkWordTiming = useCallback(
-  //   (clip: any, video: HTMLVideoElement, transcription: any) => {
-  //     const currentTime = video.currentTime;
-  
-  //     transcription.segments.forEach((segment: any) => {
-  //       // Group words in threes
-  //       const wordGroups: any[] = [];
-  //       for (let i = 0; i < segment.words.length; i += 3) {
-  //         const group = segment.words.slice(i, i + 3);
-  //         const groupStart = group[0].start;
-  //         const groupEnd = group[group.length - 1].end;
-  //         wordGroups.push({ group, start: groupStart, end: groupEnd });
-  //       }
-  //       wordGroups.forEach((wordGroup: any) => {
-  //         const { group, start, end } = wordGroup;
-  
-  //         if (currentTime >= start && currentTime <= end) {
-  //           // Map through each word in the group and apply the dynamic styling
-  //           const highlightedWords = group
-  //             .map((wordObj: any, wordIndex: number) => {
-  //               const isCurrentWord =
-  //                 currentTime >= wordObj.start &&
-  //                 (group[wordIndex + 1]?.start
-  //                   ? currentTime < group[wordIndex + 1].start
-  //                   : true);
-  //               return `<span style="background-color: ${
-  //                 isCurrentWord ? subtitleStyle.currentWordBg : 'transparent'
-  //               };
-  //                 color: ${
-  //                   isCurrentWord ? selectedColor : subtitleStyle.color
-  //                 };
-  //                 border-radius: ${
-  //                   isCurrentWord ? subtitleStyle.borderRadius : '0'
-  //                 };
-  //                 display: inline-block;
-  //                 transition: background-color 0.5s ease;
-  //               ">${wordObj.word}</span>`;
-  //             })
-  //             .join(' ');
-  
-  //           setCurrentWord((prevState) => ({
-  //             ...prevState,
-  //             [clip.id]: highlightedWords,
-  //           }));
-  //         }
-  //       });
-  //     });
-  //   },
-  //   [selectedColor, subtitleStyle.borderRadius, subtitleStyle.color, subtitleStyle.currentWordBg] // Add selectedColor as a dependency
-  // );
-  
-
 
   const handleVideoUpdate = (clip: any) => {
     if (!videoRefs.current[clip.id]) return;
@@ -318,13 +268,38 @@ const Editor: NextPageWithLayout = () => {
 
   const handleColorChange = (color: any) => {
     setSelectedColor(color.hex);
-    
   };
 
-  useEffect(()=>{
-    videoClips.length>0 && handleVideoUpdate(videoClips[0]);
-  },[selectedColor])
-  
+  // text color
+  const handleTextBoxClick = () => {
+    setShowTextPicker(!showTextPicker);
+  };
+
+  // Hide the color picker when clicking outside of it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        pickerTextRef.current &&
+        !pickerTextRef.current.contains(event.target as Node)
+      ) {
+        setShowTextPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleTextColorChange = (color: any) => {
+    setSelectedTextColor(color.hex);
+  };
+  // text color
+
+  useEffect(() => {
+    videoClips.length > 0 && handleVideoUpdate(videoClips[0]);
+  }, [selectedColor, selectedTextColor]);
 
   // color picker
 
@@ -332,7 +307,7 @@ const Editor: NextPageWithLayout = () => {
     <>
       <div className="flex">
         <div className="w-2/3">
-          <div>{'Aspect Ratio'}</div>
+          <div className='h-16 bg-cus_gray_shade border-2 border-neutral-200 border-e-0'></div>
           <div>
             {videoClips.map((clip, index) =>
               clip.clipSrc ? (
@@ -406,16 +381,16 @@ const Editor: NextPageWithLayout = () => {
             )}
           </div>
         </div>
-        <div className="w-1/3">
-          <div className="w-full max-w-md mx-auto mt-8">
+        <div className="w-1/3 bg-cus_gray_shade flex flex-col justify-between">
+          <div className="w-full max-w-md mx-auto ">
             {/* Tabs Header */}
-            <div className="flex  h-16 bg-cus_light_grey justify-center items-center">
+            <div className="flex  h-16  justify-center items-center border-2 border-neutral-200">
               <div className="flex gap-x-4">
                 <div
                   className={`flex justify-center items-center rounded  px-6 shadow ${
                     activeTab === 'tab1'
                       ? 'bg-white text-black'
-                      : ' text-gray-700'
+                      : ' text-neutral-950'
                   }`}
                 >
                   <div>
@@ -426,7 +401,7 @@ const Editor: NextPageWithLayout = () => {
                       className={`py-1 px-3  ${
                         activeTab === 'tab1'
                           ? 'bg-white text-black'
-                          : ' text-gray-700'
+                          : ' text-neutral-950'
                       }`}
                       onClick={() => setActiveTab('tab1')}
                     >
@@ -439,7 +414,7 @@ const Editor: NextPageWithLayout = () => {
                   className={`flex justify-center items-center rounded px-6 shadow ${
                     activeTab === 'tab2'
                       ? 'bg-white text-black'
-                      : ' text-gray-700'
+                      : ' text-neutral-950'
                   }`}
                 >
                   <div>
@@ -447,10 +422,10 @@ const Editor: NextPageWithLayout = () => {
                   </div>
                   <div>
                     <button
-                      className={`py-1 px-3 rounded ${
+                      className={`py-1 px-3 rounded  ${
                         activeTab === 'tab2'
                           ? 'bg-white text-black'
-                          : ' text-gray-700'
+                          : ' text-neutral-950'
                       }`}
                       onClick={() => setActiveTab('tab2')}
                     >
@@ -462,9 +437,9 @@ const Editor: NextPageWithLayout = () => {
             </div>
 
             {/* Tabs Content */}
-            <div className="mt-4">
+            <div className="mt-4 h-full">
               {activeTab === 'tab1' && (
-                <div className="ps-4 bg-cus_gray_shade rounded ">
+                <div className="ps-4  rounded ">
                   <p>
                     <div
                       className="flex justify-center items-center  bg-black h-14 rounded-md font-cus_inter italic font-bold p-4"
@@ -492,19 +467,20 @@ const Editor: NextPageWithLayout = () => {
                 </div>
               )}
               {activeTab === 'tab2' && (
-                <div className="p-4 bg-cus_gray_shade rounded ">
+                <div className="p-4  rounded  ">
                   <div className=" space-y-2">
                     <div className="font-medium pb-0.5 text-sm font-cus_inter">
                       {'Colors'}
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <div className="text-xs  text-neutral-600">
+                      <div className="text-xs  text-neutral-600 font-cus_inter">
                         {'Highlight color'}
                       </div>
 
-                      <div className="flex gap-x-4">
-                        <div className="">
+                      <div className="flex gap-x-4 ps-4 bg-white pr-1 py-1 rounded-md border-2">
+                        <div className="flex items-center gap-x-8">
+                          <div className='font-cus_inter text-sm font-normal'>{selectedColor}</div>
                           <div
                             style={{
                               position: 'relative',
@@ -537,14 +513,55 @@ const Editor: NextPageWithLayout = () => {
                         </div>
                       </div>
                     </div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-xs  text-neutral-600 font-cus_inter">
+                        {'Text color'}
+                      </div>
+
+                      <div className="flex gap-x-4 ps-4 bg-white pr-1 py-1 rounded-md border-2 ">
+                        <div className="flex items-center gap-x-8">
+                          <div>{selectedTextColor}</div>
+
+                          <div
+                            style={{
+                              position: 'relative',
+                              display: 'inline-block',
+                            }}
+                          >
+                            {/* Color Box */}
+                            <div
+                              onClick={handleTextBoxClick}
+                              style={{
+                                backgroundColor: selectedTextColor,
+                              }}
+                              className="w-6 h-6 cursor-pointer border border-gray-300 rounded"
+                            ></div>
+
+                            {/* SketchPicker */}
+                            {showTextPicker && (
+                              <div
+                                ref={pickerTextRef}
+                                // style={{ position: 'absolute', zIndex: 100, marginTop: '10px' }}
+                                className="absolute z-[100] mt-2 right-0 "
+                              >
+                                <SketchPicker
+                                  color={selectedTextColor}
+                                  onChange={handleTextColorChange}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
                     <div className="font-medium pb-0.5 text-sm font-cus_inter">
                       {'Position'}
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <div className="text-xs  text-neutral-600">
-                        {'Text  Position'}
+                      <div className="text-xs  text-neutral-600 font-cus_inter">
+                        {'Text Position'}
                       </div>
 
                       <div className="flex gap-x-4">
@@ -617,7 +634,7 @@ const Editor: NextPageWithLayout = () => {
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <div className="text-xs  text-neutral-600">
+                      <div className="text-xs  text-neutral-600 font-cus_inter">
                         {'Alignment'}
                       </div>
 
@@ -701,6 +718,9 @@ const Editor: NextPageWithLayout = () => {
                 </div>
               )}
             </div>
+          </div>
+          <div>
+            <Button className='bg-black w-full mx-3 text-sm text-white rounded-md font-cus_inter'>{"Export Video"}</Button>
           </div>
         </div>
       </div>
