@@ -19,7 +19,7 @@ const FetchingVideo: NextPageWithLayout = () => {
   const [isProcessing, setIsProcessing] = useState<{ [key: string]: boolean }>({})
   const [subtitleStyle] = useState({
     fontSize: '20px',
-    color: 'white',  // &H00FFFFFF
+    color: '#FFFFFF',  // &H00FFFFFF
     currentWordBg: '#E4B1F000' , //'#E4B1F0' , 
     bottom: '54px',
     left: '50%',

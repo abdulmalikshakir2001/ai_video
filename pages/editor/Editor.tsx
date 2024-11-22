@@ -35,13 +35,11 @@ const Editor: NextPageWithLayout = () => {
   const pickerTextRef = useRef<HTMLDivElement>(null);
   // text color picker
 
-  const [subtitleStyle] = useState({
+  const [subtitleStyle,setSubtitleStyle] = useState({
     fontSize: '20px',
     color: selectedTextColor, // &H00FFFFFF
     currentWordBg: '#E4B1F000', //'#E4B1F0' ,
-
     left: 0,
-
     currentWordColor: selectedColor, //'white',  // &H00FFFFFF
     borderRadius: '10px',
     fontFamily: 'Roboto',
@@ -302,6 +300,50 @@ const Editor: NextPageWithLayout = () => {
   }, [selectedColor, selectedTextColor]);
 
   // color picker
+  const handleDownload = async (clip: any) => {
+    try {
+
+      // Trigger the video download by calling the API
+      const response = await axios.post(
+        '/api/generateSubtitles/generateSubtitles',
+        {
+          subtitleStyle: {
+            ...subtitleStyle,
+            transcriptionPath: `${clip.tranSrc}`, // Include the transcription file path
+          },
+          videoClipPath: `${clip.clipSrc}`, // Path for the video clip
+        },
+        {
+          responseType: 'blob', // Important: Set response type to blob to handle binary stream
+        }
+      );
+  
+      // Create a Blob URL for the video stream
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${'video'}.mp4`); // Name the downloaded file
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading the video:', error);
+    } finally {
+      // Set processing to false after request completes
+
+    }
+  };
+
+
+
+  useEffect(() => {
+    setSubtitleStyle((prevStyle) => ({
+      ...prevStyle,
+      currentWordColor: selectedColor,
+      color: selectedTextColor,
+    }));
+  }, [selectedColor, selectedTextColor]);
+
 
   return (
     <>
@@ -720,7 +762,9 @@ const Editor: NextPageWithLayout = () => {
             </div>
           </div>
           <div>
-            <Button className='bg-black w-full mx-3 text-sm text-white rounded-md font-cus_inter'>{"Export Video"}</Button>
+            <Button className='bg-black w-full mx-3 text-sm text-white rounded-md font-cus_inter'
+            onClick={() => videoClips.length > 0 && handleDownload(videoClips[0])}
+            >{"Export Video"}</Button>
           </div>
         </div>
       </div>

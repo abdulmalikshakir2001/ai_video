@@ -35,7 +35,35 @@ export default async function handler(
 // Utility function to create the .ass file content
 // Utility function to create the .ass file content
 
-function createAssFile(transcriptionData: any) {
+function convertHexToAssFormat(hexColor) {
+  // Remove the "#" from the hex color if present
+  if (hexColor.startsWith("#")) {
+      hexColor = hexColor.slice(1);
+  }
+
+  // Ensure the hex color is valid
+  if (hexColor.length !== 6) {
+      throw new Error("Invalid HEX color. It should be 6 characters long.");
+  }
+
+  // Convert RGB (RRGGBB) to BGR (BBGGRR)
+  const bgrColor = hexColor.slice(4, 6) + hexColor.slice(2, 4) + hexColor.slice(0, 2);
+
+  // Format the result as 1c&HBBGGRR&
+  const assFormat = `1c&H${bgrColor}&`;
+
+  return assFormat;
+}
+
+// Example usage
+
+
+
+
+
+
+
+function createAssFile(transcriptionData: any,subtitleStyle:any) {
   const transcription = JSON.parse(transcriptionData);
   let assContent = `
 [Script Info]
@@ -51,6 +79,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 `;
 
   let lastWordEndTime = 0; // Variable to store the last word's end time across segments
+
+  const highlightWordColor = convertHexToAssFormat(subtitleStyle.currentWordColor);
+  const textColor = convertHexToAssFormat(subtitleStyle.color);
 
   const modifiedSegments = transcription.segments.map((segment: any) => {
     const modifiedWords = segment.words.map((word: any, index: number) => {
@@ -109,8 +140,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       const threeWordGroupStartTime = wordGroup[0].start; // Fallback to previous end time
       const threeWordGroupEndTime = wordGroup[wordGroup.length - 1].end;
       // ------------------------------->
-      const WHITE_COLOR = '\\1c&HFFFFFF&';
-      const GREEN_COLOR = '\\1c&H00FF00&';
+      const WHITE_COLOR = `\\${textColor}`;
+      const GREEN_COLOR = `\\${highlightWordColor}`;
 
       
 
@@ -210,7 +241,7 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
     const transcriptionData = fs.readFileSync(transcriptionPath, 'utf-8');
     console.log(subtitleStyle);
 
-    const assContent = createAssFile(transcriptionData);
+    const assContent = createAssFile(transcriptionData,subtitleStyle);
 
     // Save the .ass subtitle file temporarily
     //   const assFilePath = path.join(process.cwd(),'public', `ass.ass`);
