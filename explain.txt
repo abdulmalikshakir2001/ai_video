@@ -455,3 +455,7 @@ Dialogue: 0,0:00:00.00,0:00:00.67,Default,,0,0,0,,{\1c&HFFFFFF&\t(0,335,\1c&H00F
 Dialogue: 0,0:00:00.67,0:00:01.29,Default,,0,0,0,,{\1c&HFFFFFF&\t(0, 100,\1c&H00FF00&)\t(100,100,\1c&HFFFFFF&)}of {\1c&HFFFFFF&\t(100,100,\1c&H00FF00&)\t(300,300,\1c&HFFFFFF&)}people
 Dialogue: 0,0:00:01.33,0:00:04.95,Default,,0,0,0,,{\1c&HFFFFFF&\t(0,60,\1c&H00FF00&)\t(60,60,\1c&HFFFFFF&)}in {\1c&HFFFFFF&\t(60,60,\1c&H00FF00&)\t(120,120,\1c&HFFFFFF&)}this {\1c&HFFFFFF&\t(120,120,\1c&H00FF00&)\t(361,361,\1c&HFFFFFF&)}country.
 Dialogue: 0,0:00:51.52,0:00:53.55,Default,,0,0,0,,{\1c&HFFFFFF&\t(0,5,\1c&H00FF00&)\t(1162,1162,\1c&HFFFFFF&)}craziest {\1c&HFFFFFF&\t(1162,5,\1c&H00FF00&)\t(1442,1442,\1c&HFFFFFF&)}Gini {\1c&HFFFFFF&\t(1442,5,\1c&H00FF00&)}coefficients,
+
+
+
+cat ~/.ssh/id_rsa.pub
