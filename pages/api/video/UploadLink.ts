@@ -3,8 +3,10 @@ import { getSession } from '@/lib/session';
 import fs from 'fs';
 import path from 'path';
 import { prisma } from '@/lib/prisma';
-import ytdl from '@distube/ytdl-core';
-import ffmpeg from 'fluent-ffmpeg';
+// import  ytdl  from '@distube/ytdl-core';
+import ytdlp from 'ytdlp-nodejs';
+
+// import ffmpeg from 'fluent-ffmpeg';
 import { createVideo, getAllVideos, updateConVideoIdField } from 'models/uploadedVideo';
 
 interface ExtendedNextApiRequest extends NextApiRequest {
@@ -17,16 +19,16 @@ const extractVideoId = (url: string) => {
   return match ? match[1] : null;
 };
 
-const getVideoDuration = async (videoId: string): Promise<number | null> => {
-  try {
-    const info = await ytdl.getInfo(videoId);
-    const duration = info.videoDetails.lengthSeconds;
-    return duration ? parseInt(duration) : null;
-  } catch (error) {
-    console.error('Error fetching video duration:', error);
-    return null;
-  }
-};
+// const getVideoDuration = async (videoId: string): Promise<number | null> => {
+//   try {
+//     const info = await ytdl.getInfo(videoId);
+//     const duration = info.videoDetails.lengthSeconds;
+//     return duration ? parseInt(duration) : null;
+//   } catch (error) {
+//     console.error('Error fetching video duration:', error);
+//     return null;
+//   }
+// };
 
 let globalTimestamp: string;
 
@@ -57,9 +59,9 @@ export default async function handler(req: ExtendedNextApiRequest, res: NextApiR
     res.status(status).json({ status: 'false', message });
   }
 }
-
 const handlePOST = async (req: ExtendedNextApiRequest, res: NextApiResponse) => {
   const { origionalVideoLink } = req.body;
+  console.log(origionalVideoLink);
   const session = await getSession(req, res);
   if (!session) {
     return res.status(401).json({ status: 'false', message: 'Unauthorized' });
@@ -107,26 +109,26 @@ const handlePOST = async (req: ExtendedNextApiRequest, res: NextApiResponse) => 
       return;
     }
 
-    const videoDuration = await getVideoDuration(videoId);
+    // const videoDuration = await getVideoDuration(videoId);
 
-    if (videoDuration === null) {
-      res.status(500).json({ status: 'false', message: 'Failed to get video duration' });
-      return;
-    }
+    // if (videoDuration === null) {
+    //   res.status(500).json({ status: 'false', message: 'Failed to get video duration' });
+    //   return;
+    // }
 
-    const maxVideoLengthFromDB = subscription.subscriptionPackage?.max_length_video;
-    let maxVideoLengthInSeconds = 0;
-    if (maxVideoLengthFromDB) {
-      maxVideoLengthInSeconds = timeStringToSeconds(maxVideoLengthFromDB);
-    }
+    // const maxVideoLengthFromDB = subscription.subscriptionPackage?.max_length_video;
+    // let maxVideoLengthInSeconds = 0;
+    // if (maxVideoLengthFromDB) {
+    //   maxVideoLengthInSeconds = timeStringToSeconds(maxVideoLengthFromDB);
+    // }
 
-    if (videoDuration >= maxVideoLengthInSeconds) {
-      return res.status(403).json({
-        status: 'false',
-        message: 'Video length exceeds the maximum allowed length for your subscription package',
-        data: 'video_length_exceeded',
-      });
-    }
+    // if (videoDuration >= maxVideoLengthInSeconds) {
+    //   return res.status(403).json({
+    //     status: 'false',
+    //     message: 'Video length exceeds the maximum allowed length for your subscription package',
+    //     data: 'video_length_exceeded',
+    //   });
+    // }
 
     // Download and save video using ytdl-core and ffmpeg
     const videosDir = path.join(process.cwd(), 'uploads');
@@ -141,61 +143,96 @@ const handlePOST = async (req: ExtendedNextApiRequest, res: NextApiResponse) => 
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     
-    const videoPath = path.join(uploadDir, `${videoName}.mp4`);
-    const audioPath = path.join(uploadDir, `${videoName}.m4a`);
+    // const videoPath = path.join(uploadDir, `${videoName}.mp4`);
+    // const audioPath = path.join(uploadDir, `${videoName}.m4a`);
     const outputPath = path.join(uploadDir, `${videoName}_${globalTimestamp}.mp4`);
     const dbPath = `videos/${userId}/${videoName}_${globalTimestamp}/${videoName}_${globalTimestamp}.mp4`;
-    
-    const videoStream = ytdl(videoId, { quality: 'highestvideo' });
-    const audioStream = ytdl(videoId, { quality: 'highestaudio' });
-    
-    videoStream.pipe(fs.createWriteStream(videoPath));
-    audioStream.pipe(fs.createWriteStream(audioPath));
-    
-    Promise.all([
-      new Promise((resolve) => videoStream.on('finish', resolve)),
-      new Promise((resolve) => audioStream.on('finish', resolve))
-    ]).then(() => {
-      // Merge video and audio using ffmpeg
-      ffmpeg()
-        .input(videoPath)
-        .input(audioPath)
-        .videoCodec('copy')
-        .audioCodec('aac')
-        .output(outputPath)
-        .on('end', async () => {
-          console.log('Merging finished!');
 
-          // Delete the temporary files
-          fs.unlink(videoPath, (err) => {
-            if (err) throw err;
-            console.log('Video file deleted');
-          });
-          fs.unlink(audioPath, (err) => {
-            if (err) throw err;
-            console.log('Audio file deleted');
-          });
+    const file = fs.createWriteStream(outputPath);
 
-          const videoUploaded = await createVideo({ link: dbPath, userId: session.user.id, duration: videoDuration });
-          if (videoUploaded) {
-            res.status(200).json({ status: 'true', message: 'Video created', data: videoUploaded });
-          } else {
-            res.json({ status: 'false', message: 'Video not created' });
-          }
-        })
-        .on('error', (err) => {
-          console.error('Error during merging:', err);
-          res.status(500).json({ status: 'false', message: 'Error during merging', error: err });
-        })
-        .run();
-    }).catch((err) => {
-      console.error(err);
-      res.status(500).json({ status: 'false', message: 'Error downloading video', error: err });
+    ytdlp
+      .stream(origionalVideoLink, {
+        filter: "audioandvideo",
+        quality: "highest",
+      })
+      .on("error", (err) => {
+        console.error("Error during download:", err);
+        res.status(500).json({ status: "false", message: "Error downloading video", error: err });
+      })
+      .pipe(file);
+    
+    file.on("close", async () => {
+      try {
+        console.log("Download complete. File saved at:", outputPath);
+    
+        // Save video metadata in the database
+        const videoUploaded = await createVideo({ link: dbPath, userId: session.user.id });
+        if (videoUploaded) {
+          res.status(200).json({ status: "true", message: "Video created", data: videoUploaded });
+        } else {
+          res.status(500).json({ status: "false", message: "Video not created" });
+        }
+      } catch (error) {
+        console.error("Error during video upload:", error);
+        res.status(500).json({ status: "false", message: "Error processing video upload", error });
+      }
     });
+    
+
+    
+  
+    
+    // const videoStream = ytdl(videoId, { quality: 'highestvideo' });
+    // const audioStream = ytdl(videoId, { quality: 'highestaudio' });
+    
+    // videoStream.pipe(fs.createWriteStream(videoPath));
+    // audioStream.pipe(fs.createWriteStream(audioPath));
+    
+    // Promise.all([
+    //   new Promise((resolve) => videoStream.on('finish', resolve)),
+    //   new Promise((resolve) => audioStream.on('finish', resolve))
+    // ]).then(() => {
+    //   // Merge video and audio using ffmpeg
+    //   ffmpeg()
+    //     .input(videoPath)
+    //     .input(audioPath)
+    //     .videoCodec('copy')
+    //     .audioCodec('aac')
+    //     .output(outputPath)
+    //     .on('end', async () => {
+    //       console.log('Merging finished!');
+
+    //       // Delete the temporary files
+    //       fs.unlink(videoPath, (err) => {
+    //         if (err) throw err;
+    //         console.log('Video file deleted');
+    //       });
+    //       fs.unlink(audioPath, (err) => {
+    //         if (err) throw err;
+    //         console.log('Audio file deleted');
+    //       });
+
+    //       const videoUploaded = await createVideo({ link: dbPath, userId: session.user.id });
+    //       if (videoUploaded) {
+    //         res.status(200).json({ status: 'true', message: 'Video created', data: videoUploaded });
+    //       } else {
+    //         res.json({ status: 'false', message: 'Video not created' });
+    //       }
+    //     })
+    //     .on('error', (err) => {
+    //       console.error('Error during merging:', err);
+    //       res.status(500).json({ status: 'false', message: 'Error during merging', error: err });
+    //     })
+    //     .run();
+    // }).catch((err) => {
+    //   console.error(err);
+    //   res.status(500).json({ status: 'false', message: 'Error downloading video', error: err });
+    // });
 
     return;
   }
 };
+
 
 const handlePUT = async (req: ExtendedNextApiRequest, res: NextApiResponse) => {
   const { conVideoId, videoId } = req.body;
@@ -272,7 +309,7 @@ const handleGET = async (req: ExtendedNextApiRequest, res: NextApiResponse) => {
   }
 };
 
-function timeStringToSeconds(timeString: string): number {
-  const [hours, minutes, seconds] = timeString.split(':').map(Number);
-  return hours * 3600 + minutes * 60 + seconds;
-}
+// function timeStringToSeconds(timeString: string): number {
+//   const [hours, minutes, seconds] = timeString.split(':').map(Number);
+//   return hours * 3600 + minutes * 60 + seconds;
+// }

@@ -18,7 +18,7 @@ import { ImCross } from 'react-icons/im';
 
 const VideoUpload: React.FC = () => {
   const router = useRouter();
-  // const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { t } = useTranslation('common');
   // const [isModalOpen, setIsModalOpen] = useState(false);
   // const [video, setVideo] = useState<any[]>([]);
@@ -108,6 +108,7 @@ const VideoUpload: React.FC = () => {
         .required('YouTube link is required'),
     }),
     onSubmit: async (values) => {
+      setLoading(true);
       const { link } = values;
       // setLoading(true);
 
@@ -297,11 +298,39 @@ const VideoUpload: React.FC = () => {
                     fill="#C00F29"
                   />
                 </svg>
-                <input
-                  type="text"
-                  placeholder="https://www.youtube.com"
-                  className="input input-bordered w-full max-w-xs bg-cus_light_grey"
-                />
+
+                <form onSubmit={formik.handleSubmit}>
+                  <div className='flex items-center gap-2'>
+                  <div>
+  <input
+    type="text"
+    placeholder="https://www.youtube.com"
+    className="input input-bordered w-full max-w-xs bg-cus_light_grey"
+    value={formik.values.link} // Bind Formik state
+    onChange={(e) => {
+      formik.setFieldValue('link', e.target.value); // Update Formik state
+    }}
+    onBlur={formik.handleBlur} // Mark the field as touched
+  />
+  {formik.errors.link && formik.touched.link && (
+    <div className="text-red-500">{formik.errors.link}</div>
+  )}
+  </div>
+  <div>
+
+  {/* Submit button */}
+  <button type="submit" className="btn hover:bg-cus_dark_pink text-white bg-cus_dark_pink">
+  {loading ? (
+      <span className="loading loading-spinner loading-lg"></span>
+    ) : (
+      "import"
+    )}
+  </button>
+  </div>
+  </div>
+</form>
+
+                
               </div>
               <div>
                 <p className="mt-10 font-cus_monserrat text-3xl font-semibold ">

@@ -30,7 +30,7 @@
     "@boxyhq/metrics": "0.2.7",
     "@boxyhq/react-ui": "3.3.43",
     "@boxyhq/saml-jackson": "1.25.0",
-    "@distube/ytdl-core": "^4.13.7",
+    "@distube/ytdl-core": "^4.15.8",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@ffmpeg/core": "^0.12.6",
@@ -86,6 +86,7 @@
     "svix": "1.24.0",
     "swr": "2.2.5",
     "video-react": "^0.16.0",
+    "ytdlp-nodejs": "^0.1.5",
     "yup": "1.4.0",
     "zod": "3.23.8"
   },
