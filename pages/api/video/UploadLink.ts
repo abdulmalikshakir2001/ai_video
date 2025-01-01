@@ -148,35 +148,73 @@ const handlePOST = async (req: ExtendedNextApiRequest, res: NextApiResponse) => 
     const outputPath = path.join(uploadDir, `${videoName}_${globalTimestamp}.mp4`);
     const dbPath = `videos/${userId}/${videoName}_${globalTimestamp}/${videoName}_${globalTimestamp}.mp4`;
 
+    // const file = fs.createWriteStream(outputPath);
+
+    // ytdlp
+    //   .stream(origionalVideoLink, {
+    //     filter: "audioandvideo",
+    //     quality: "highest",
+    //   })
+    //   .on("error", (err) => {
+    //     console.error("Error during download:", err);
+    //     res.status(500).json({ status: "false", message: "Error downloading video", error: err });
+    //   })
+    //   .pipe(file);
+    
+    // file.on("close", async () => {
+    //   try {
+    //     console.log("Download complete. File saved at:", outputPath);
+    
+    //     // Save video metadata in the database
+    //     const videoUploaded = await createVideo({ link: dbPath, userId: session.user.id });
+    //     if (videoUploaded) {
+    //       res.status(200).json({ status: "true", message: "Video created", data: videoUploaded });
+    //     } else {
+    //       res.status(500).json({ status: "false", message: "Video not created" });
+    //     }
+    //   } catch (error) {
+    //     console.error("Error during video upload:", error);
+    //     res.status(500).json({ status: "false", message: "Error processing video upload", error });
+    //   }
+    // });
+
     const file = fs.createWriteStream(outputPath);
 
-    ytdlp
+try {
+  // Download the video synchronously
+  await new Promise<void>((resolve, reject) => {
+     ytdlp
       .stream(origionalVideoLink, {
         filter: "audioandvideo",
         quality: "highest",
       })
       .on("error", (err) => {
         console.error("Error during download:", err);
-        res.status(500).json({ status: "false", message: "Error downloading video", error: err });
+        reject(err); // Reject the promise if an error occurs
       })
       .pipe(file);
-    
-    file.on("close", async () => {
-      try {
-        console.log("Download complete. File saved at:", outputPath);
-    
-        // Save video metadata in the database
-        const videoUploaded = await createVideo({ link: dbPath, userId: session.user.id });
-        if (videoUploaded) {
-          res.status(200).json({ status: "true", message: "Video created", data: videoUploaded });
-        } else {
-          res.status(500).json({ status: "false", message: "Video not created" });
-        }
-      } catch (error) {
-        console.error("Error during video upload:", error);
-        res.status(500).json({ status: "false", message: "Error processing video upload", error });
-      }
+
+    // Resolve the promise when the download is complete
+    file.on("close", () => {
+      console.log("Download complete. File saved at:", outputPath);
+      resolve();
     });
+  });
+
+  // Perform the database operation after download is complete
+  const videoUploaded = await createVideo({ link: dbPath, userId: session.user.id });
+
+  if (videoUploaded) {
+    // Return the response after the database operation
+    return res.status(200).json({ status: "true", message: "Video created", data: videoUploaded });
+  } else {
+    return res.status(500).json({ status: "false", message: "Video not created" });
+  }
+} catch (error) {
+  console.error("Error:", error);
+  return res.status(500).json({ status: "false", message: "Error processing request", error });
+}
+
     
 
     
