@@ -42,7 +42,8 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 WORKDIR /app
 
 # Create and activate a Python virtual environment using Python 3.10
-RUN python3.10 -m venv /myenv
+# RUN python3.10 -m venv /myenv
+RUN py -3.10 -m venv /myenv
 ENV PATH="/myenv/bin:$PATH"
 
 # Install setuptools-rust in the virtual environment
