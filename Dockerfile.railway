@@ -42,8 +42,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 WORKDIR /app
 
 # Create and activate a Python virtual environment using Python 3.10
-# RUN python3.10 -m venv /myenv
-RUN py -3.10 -m venv /myenv
+RUN python3.10 -m venv /myenv
 ENV PATH="/myenv/bin:$PATH"
 
 # Install setuptools-rust in the virtual environment
@@ -120,7 +119,7 @@ EXPOSE 4002
 RUN echo "Running db:setup..."
 RUN npx prisma generate
 RUN npm run build
-# RUN npm run db:setup
+RUN npm run db:setup
 
 # Start the Next.js app in development mode
 CMD ["npm", "run", "start"]
