@@ -99,7 +99,6 @@ pytest==8.3.4
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-magic==0.4.27
-python-magic-bin==0.4.14
 pytorch-lightning==2.5.0.post0
 pytorch-metric-learning==2.8.1
 pytz==2024.2
