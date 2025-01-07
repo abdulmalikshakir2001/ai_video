@@ -2,7 +2,7 @@ import os
 import whisperx
 import ffmpeg
 import random
-# import gc
+import gc
 # import torch
 from transformers import pipeline  # EmoRoBERTa model for emotion detection
 # from clipsai import resize, MediaEditor, AudioVideoFile
@@ -431,7 +431,7 @@ def videoProcessing(config):
         # text = " ".join([segment['text'] for segment in result['segments']])
         # formatted_text = f'"""{text}"""'
         # final_output_with_music_or_audio = add_background_music(final_output, config,filenameWithOutExt,formatted_text)
-        # gc.collect()
+        gc.collect()
 def main():
     config = json.loads(sys.argv[1])
    
