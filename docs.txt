@@ -12,5 +12,15 @@ TODO:
 
 NOTE :  only merge specific comment from feature branch to master branch
 
+SETUP :
+   activate the venv  then 
+   1) pip install clipsai
+   2) pip install whisperx@git+https://github.com/m-bain/whisperx.git
+   3) pip install python-magic
+   4) pip install python-magic-bin
+   5) pip install ffmpeg-python
+   6) pip install moviepy
+   then upload the file if error or some warning shows then again upload file . now the clips will be generated  . when the first audio of clip 1 generate then it will stuck but wait for some time like 10-30 min to download models in background if still not working again upload video and  wait .
+
 
 

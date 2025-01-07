@@ -11,9 +11,14 @@ from moviepy.video.io.VideoFileClip import VideoFileClip
 import json
 import sys
 
+from huggingface_hub import login
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+
+
 
 
 def videoProcessing(config):
+    login(token="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")
     print(config)
     if not os.path.exists(config["output_folder"]):
         os.makedirs(config["output_folder"])
@@ -67,7 +72,7 @@ def videoProcessing(config):
             
             # Extract the clip and save it to the specified file path
             with VideoFileClip(video_path) as video:
-                new_clip = video.subclip(start_time, end_time)
+                new_clip = video.subclipped(start_time, end_time)
                 new_clip.write_videofile(
                     clip_file_path,
                     codec="libx264",
@@ -427,11 +432,6 @@ def videoProcessing(config):
         # formatted_text = f'"""{text}"""'
         # final_output_with_music_or_audio = add_background_music(final_output, config,filenameWithOutExt,formatted_text)
         # gc.collect()
-        
-
-
-
- 
 def main():
     config = json.loads(sys.argv[1])
    
