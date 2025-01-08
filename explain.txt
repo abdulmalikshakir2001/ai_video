@@ -611,3 +611,134 @@ urllib3==2.2.3
 whisperx==3.1.5
 yarl==1.15.2
 zipp==3.20.2
+
+
+
+
+docker file : 
+# Use an official Node.js image as the base image
+FROM node:20.8.0
+
+# Install dependencies for building Python from source and Rust
+RUN apt-get update && apt-get install -y  \
+    wget \
+    curl \
+    build-essential \
+    zlib1g-dev \
+    libffi-dev \
+    libssl-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncurses5-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    liblzma-dev \
+    git \
+    ffmpeg \
+    imagemagick \
+    libhdf5-dev \
+    libmagic1 \
+    python3-venv \
+    python3 \
+    && rm -rf /var/lib/apt/lists/*  # Clean up to reduce image size
+
+# Install Python 3.10
+RUN wget https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz \
+    && tar xzf Python-3.10.0.tgz \
+    && cd Python-3.10.0 \
+    && ./configure --enable-optimizations \
+    && make altinstall \
+    && cd .. \
+    && rm -rf Python-3.10.0.tgz Python-3.10.0
+
+# Install Rust using rustup
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Create and activate a Python virtual environment using Python 3.10
+RUN python3.10 -m venv /myenv
+ENV PATH="/myenv/bin:$PATH"
+
+# Install setuptools-rust in the virtual environment
+RUN pip install --upgrade pip setuptools-rust
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install -r requirements.txt \
+    && pip install nltk \
+    && python3.10 -m nltk.downloader -d /usr/local/share/nltk_data punkt punkt_tab vader_lexicon
+
+# RUN pip install torch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 --index-url https://download.pytorch.org/whl/cpu
+
+# Copy package.json and package-lock.json first to leverage Docker cache
+COPY package.json package-lock.json ./
+
+# Increase NPM timeout and retry installation on failure
+RUN npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 20000 \
+    && npm config set fetch-retry-maxtimeout 120000 \
+    && npm install || npm install || npm install  # Retry on failure
+
+# Copy the remaining app files
+COPY . .
+
+# Make environment variables dynamic (loaded at runtime)
+ARG NEXTAUTH_URL
+ARG NEXTAUTH_SECRET
+ARG SMTP_HOST
+ARG SMTP_PORT
+ARG SMTP_USER
+ARG SMTP_PASSWORD
+ARG SMTP_FROM
+ARG DATABASE_URL
+ARG APP_URL
+ARG SVIX_URL
+ARG SVIX_API_KEY
+ARG GITHUB_CLIENT_ID
+ARG GITHUB_CLIENT_SECRET
+ARG GOOGLE_CLIENT_ID
+ARG GOOGLE_CLIENT_SECRET
+ARG STRIPE_SECRET_KEY
+ARG STRIPE_WEBHOOK_SECRET
+ARG NEXT_PUBLIC_DARK_MODE
+ARG PORT
+
+# Set environment variables dynamically using ARG for better flexibility
+ENV NEXTAUTH_URL=$NEXTAUTH_URL
+ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+ENV SMTP_HOST=$SMTP_HOST
+ENV SMTP_PORT=$SMTP_PORT
+ENV SMTP_USER=$SMTP_USER
+ENV SMTP_PASSWORD=$SMTP_PASSWORD
+ENV SMTP_FROM=$SMTP_FROM
+ENV DATABASE_URL=$DATABASE_URL
+ENV APP_URL=$APP_URL
+ENV SVIX_URL=$SVIX_URL
+ENV SVIX_API_KEY=$SVIX_API_KEY
+ENV GITHUB_CLIENT_ID=$GITHUB_CLIENT_ID
+ENV GITHUB_CLIENT_SECRET=$GITHUB_CLIENT_SECRET
+ENV GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+ENV GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+ENV STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY
+ENV STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET
+ENV NEXT_PUBLIC_DARK_MODE=$NEXT_PUBLIC_DARK_MODE
+ENV PORT=$PORT
+# Optional: Add any other dynamic variables
+ENV NODE_ENV=production
+
+# Expose the port for the application
+EXPOSE 4002
+
+# Add logging to check the db:setup command
+RUN echo "Running db:setup..."
+RUN npx prisma generate
+RUN npm run build
+# RUN npm run db:setup
+
+# Start the Next.js app in development mode
+CMD ["npm", "run", "start"]

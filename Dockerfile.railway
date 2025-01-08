@@ -1,7 +1,7 @@
 # Use an official Node.js image as the base image
 FROM node:20.8.0
 
-# Install dependencies for building Python from source and Rust
+# Install dependencies for building Python and Rust
 RUN apt-get update && apt-get install -y  \
     wget \
     curl \
@@ -23,9 +23,10 @@ RUN apt-get update && apt-get install -y  \
     libhdf5-dev \
     libmagic1 \
     python3-venv \
+    python3 \
     && rm -rf /var/lib/apt/lists/*  # Clean up to reduce image size
 
-# Install Python 3.10
+# Install Python 3.10 as an additional Python version
 RUN wget https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz \
     && tar xzf Python-3.10.0.tgz \
     && cd Python-3.10.0 \
@@ -33,6 +34,9 @@ RUN wget https://www.python.org/ftp/python/3.10.0/Python-3.10.0.tgz \
     && make altinstall \
     && cd .. \
     && rm -rf Python-3.10.0.tgz Python-3.10.0
+
+# Verify Python installations
+RUN python3 --version && python3.10 --version
 
 # Install Rust using rustup
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -42,8 +46,8 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 WORKDIR /app
 
 # Create and activate a Python virtual environment using Python 3.10
-RUN python3.10 -m venv /myenv
-ENV PATH="/myenv/bin:$PATH"
+RUN python3.10 -m venv /app/myenv
+ENV PATH="/app/myenv/bin:$PATH"
 
 # Install setuptools-rust in the virtual environment
 RUN pip install --upgrade pip setuptools-rust
@@ -53,8 +57,6 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt \
     && pip install nltk \
     && python3.10 -m nltk.downloader -d /usr/local/share/nltk_data punkt punkt_tab vader_lexicon
-
-# RUN pip install torch==2.0.0 torchvision==0.15.0 torchaudio==2.0.0 --index-url https://download.pytorch.org/whl/cpu
 
 # Copy package.json and package-lock.json first to leverage Docker cache
 COPY package.json package-lock.json ./
@@ -119,7 +121,6 @@ EXPOSE 4002
 RUN echo "Running db:setup..."
 RUN npx prisma generate
 RUN npm run build
-# RUN npm run db:setup
 
 # Start the Next.js app in development mode
 CMD ["npm", "run", "start"]

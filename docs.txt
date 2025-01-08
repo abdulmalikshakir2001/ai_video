@@ -22,5 +22,8 @@ SETUP :
    6) pip install moviepy
    then upload the file if error or some warning shows then again upload file . now the clips will be generated  . when the first audio of clip 1 generate then it will stuck but wait for some time like 10-30 min to download models in background if still not working again upload video and  wait .
 
+   client stripe key : 
+   sk_test_51PQTZD2MXTg6eduPg7y3VWnmQbzLR23BSx6TRde6TYNteFnmrQwThtRndCzYYccbj824pifkK1sh0eZiUpAFVnMp00FLzxjKOc
+   whsec_Y3JfW8Ms5C4IiWURhLbAkrwUoFas2PeN
 
 
