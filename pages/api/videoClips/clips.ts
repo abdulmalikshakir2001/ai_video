@@ -149,7 +149,9 @@ console.log('Folder path:', folderPath);
 // Convert the config to JSON and pass it to Python script
 // const pythonProcess = spawn('python', [pythonScriptPath, JSON.stringify(config)]);
 console.log('spawn process begins to start')
-const pythonProcess = spawn(path.join(process.cwd(), 'myenv', 'Scripts', 'python.exe'), [pythonScriptPath, JSON.stringify(config)]);
+// const pythonProcess = spawn(path.join(process.cwd(), 'myenv', 'Scripts', 'python.exe'), [pythonScriptPath, JSON.stringify(config)]);
+const pythonProcess = spawn(path.join(process.cwd(), 'myenv', 'bin', 'python'), [pythonScriptPath, JSON.stringify(config)]);
+
 console.log('spawn process begins to start')
 
 

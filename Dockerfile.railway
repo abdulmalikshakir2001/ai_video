@@ -120,7 +120,9 @@ EXPOSE 4002
 # Add logging to check the db:setup command
 RUN echo "Running db:setup..."
 RUN npx prisma generate
-RUN npm run build
+RUN npm run db:setup
+
 
 # Start the Next.js app in development mode
-CMD ["npm", "run", "start"]
+# CMD ["npm", "run", "start"]
+CMD ["sh", "-c", "npm run build && npm run start"]

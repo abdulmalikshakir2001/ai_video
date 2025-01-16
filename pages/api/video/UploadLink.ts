@@ -4,7 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import { prisma } from '@/lib/prisma';
 // import  ytdl  from '@distube/ytdl-core';
-import ytdlp from 'ytdlp-nodejs';
+// import ytdlp from 'ytdlp-nodejs';
+import youtubeDl from 'youtube-dl-exec';
 
 // import ffmpeg from 'fluent-ffmpeg';
 import { createVideo, getAllVideos, updateConVideoIdField } from 'models/uploadedVideo';
@@ -12,6 +13,7 @@ import { createVideo, getAllVideos, updateConVideoIdField } from 'models/uploade
 interface ExtendedNextApiRequest extends NextApiRequest {
   fileValidationError?: string | null;
 }
+
 
 const extractVideoId = (url: string) => {
   const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
@@ -150,28 +152,33 @@ const handlePOST = async (req: ExtendedNextApiRequest, res: NextApiResponse) => 
 
     
 
-    const file = fs.createWriteStream(outputPath);
+    // const file = fs.createWriteStream(outputPath);
 
 try {
   // Download the video synchronously
-  await new Promise<void>((resolve, reject) => {
-     ytdlp
-      .stream(origionalVideoLink, {
-        filter: "audioandvideo",
-        quality: "highest",
-      })
-      .on("error", (err) => {
-        console.error("Error during download:", err);
-        reject(err); // Reject the promise if an error occurs
-      })
-      .pipe(file);
+  // await new Promise<void>((resolve, reject) => {
+  //    ytdlp
+  //     .stream(origionalVideoLink, {
+  //       filter: "audioandvideo",
+  //       quality: "highest",
+  //     })
+  //     .on("error", (err) => {
+  //       console.error("Error during download:", err);
+  //       reject(err); // Reject the promise if an error occurs
+  //     })
+  //     .pipe(file);
 
-    // Resolve the promise when the download is complete
-    file.on("close", () => {
-      console.log("Download complete. File saved at:", outputPath);
-      resolve();
-    });
-  });
+  //   // Resolve the promise when the download is complete
+  //   file.on("close", () => {
+  //     console.log("Download complete. File saved at:", outputPath);
+  //     resolve();
+  //   });
+  // });
+  await youtubeDl(origionalVideoLink, {
+    output: outputPath,
+    format: 'bestvideo+bestaudio/best', 
+    mergeOutputFormat: 'mp4', 
+});
 
   // Perform the database operation after download is complete
   const videoUploaded = await createVideo({ link: dbPath, userId: session.user.id });
